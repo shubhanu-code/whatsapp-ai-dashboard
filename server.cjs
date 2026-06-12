@@ -1,4 +1,15 @@
 require('dotenv').config();
+const startTime = Date.now();
+process.on('unhandledRejection', err => {
+  console.error('UNHANDLED REJECTION:', err);
+});
+
+process.on('uncaughtException', err => {
+  console.error('UNCAUGHT EXCEPTION:', err);
+});
+console.log("Node:", process.version);
+console.log("whatsapp-web.js:", require('whatsapp-web.js/package.json').version);
+console.log("puppeteer:", require('puppeteer/package.json').version);
 const DATA_DIR = process.env.DATA_DIR || './wa-data';
 const AUTH_DIR = process.env.AUTH_DIR || './wa-auth';
 const BROWSER_PATH = process.env.BROWSER_PATH;
@@ -66,10 +77,27 @@ function safeWriteJSON(filePath, data) {
   fs.renameSync(tmpPath, filePath);
 }
 
-let allowedContacts = safeReadJSON(`${DATA_DIR}/allowedContacts.json`,[]);
-let contacts = safeReadJSON('${DATA_DIR}/contacts.json', []);
-let settings = safeReadJSON('${DATA_DIR}/settings.json', { replyMode: 'smart'});
-let rules = safeReadJSON('${DATA_DIR}/rules.json', []);
+const path = require("path");
+
+let allowedContacts = safeReadJSON(
+  path.join(DATA_DIR, "allowedContacts.json"),
+  []
+);
+
+let contacts = safeReadJSON(
+  path.join(DATA_DIR, "contacts.json"),
+  []
+);
+
+let settings = safeReadJSON(
+  path.join(DATA_DIR, "settings.json"),
+  { replyMode: "smart" }
+);
+
+let rules = safeReadJSON(
+  path.join(DATA_DIR, "rules.json"),
+  []
+);
 
 console.log('SETTINGS LOADED:', settings);
 console.log('RULES LOADED:', rules.length);
@@ -188,9 +216,17 @@ const client = new Client({
     dataPath: AUTH_DIR }), // ← change this to your own path
   
     puppeteer: {
-    executablePath: BROWSER_PATH, // ← change if needed
-    headless: false
-  }
+      executablePath: BROWSER_PATH,
+      headless: false,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
+        '--disable-extensions'
+      ]
+    }
 });
 
 client.on('qr', qr => {
@@ -202,9 +238,35 @@ client.on('loading_screen', (percent, message) => {
   console.log('LOADING:', percent, message);
 });
 
-client.on('authenticated', () => {
-  console.log('AUTHENTICATED');
-  console.log('WAITING FOR READY...');
+client.on('authenticated', async () => {
+
+  setTimeout(() => {
+
+    try {
+
+      const page = client.pupPage;
+
+      page.on('framenavigated', frame => {
+
+        if (frame === page.mainFrame()) {
+
+          console.log(
+            'NAVIGATED:',
+            frame.url()
+          );
+
+        }
+
+      });
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  }, 1000);
+
 });
 client.on('auth_failure', msg => {
   console.log('AUTH FAILURE:', msg);
@@ -226,6 +288,17 @@ client.on('ready', async () => {
   } catch (err) {
     console.error(err);
   }
+});
+client.on('ready', () => {
+
+  const seconds =
+    ((Date.now() - startTime) / 1000)
+      .toFixed(1);
+
+  console.log(
+    `READY after ${seconds}s`
+  );
+
 });
 
 client.on('message_create', msg => {
@@ -363,7 +436,26 @@ client.on('message', async msg => {
 });
 
 
-client.initialize();
+(async () => {
+
+  try {
+
+    await client.initialize();
+
+    console.log(
+      "INITIALIZE SUCCESS"
+    );
+
+  } catch (err) {
+
+    console.error(
+      "INITIALIZE FAILED:",
+      err
+    );
+
+  }
+
+})();
 
 app.listen(5000, () => {
   console.log('Server running on port 5000');
