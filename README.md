@@ -67,11 +67,11 @@ I wanted to explore how AI assistants can be integrated into messaging platforms
 
 ## Rules Engine
 
-![Rules](screenshots/Auto-reply rules.png)
+![Rules](screenshots/Auto-reply-rules.png)
 
 ## Chat Simulator
 
-![Simulator](screenshots/chat simulator.png)
+![Simulator](screenshots/chat-simulator.png)
 
 
 ## Getting Started
