@@ -1,22 +1,84 @@
 # WhatsApp AI Auto-Reply Dashboard
 
-A personal project built to automate WhatsApp conversations using AI and rule-based responses through a custom dashboard.
+A full-stack WhatsApp automation platform that combines AI-powered conversations, rule-based automation, and contact management through a custom-built dashboard.
 
 ## Overview
 
-This project combines WhatsApp Web automation with Groq AI to create an intelligent auto-reply system. The dashboard allows management of contacts, auto-reply rules, AI response modes, and conversation testing through a WhatsApp-inspired interface.
+This project integrates WhatsApp Web automation with Groq AI to create an intelligent auto-reply assistant. It provides a modern dashboard for managing contacts, automation rules, AI reply modes, and conversation testing while maintaining full control over who the bot can interact with.
 
 ## Features
 
-* WhatsApp Web integration
-* AI-powered responses using Groq
-* Rule-based auto replies
-* Smart Mode (Rules + AI fallback)
-* Contact management system
-* Allowed contacts whitelist
-* Chat simulator for testing
-* Context-aware AI memory
-* Real-time dashboard controls
+### WhatsApp Automation
+
+* WhatsApp Web integration using whatsapp-web.js
+* Persistent LocalAuth session management
+* Automatic session recovery and reconnection handling
+* Allowed contacts whitelist system
+* Contact-based bot enable/disable controls
+
+### AI-Powered Replies
+
+* Groq AI integration
+* AI-only response mode
+* Smart Mode (Rules → AI fallback)
+* Context-aware conversation memory
+* Relationship-aware contact metadata
+
+### Rule Engine
+
+* Keyword-based auto replies
+* Exact match and contains match modes
+* Contact-specific rules
+* Global rules for all contacts
+* Enable/disable rules individually
+* Real-time rule management dashboard
+
+### Advanced Contact Management
+
+* Create, edit, and delete contacts
+* Relationship classification
+
+  * Mother
+  * Father
+  * Brother
+  * Sister
+  * College Friend
+  * Classmate
+  * Faculty
+  * Recruiter
+* Bot access management
+* Auto-discovered WhatsApp contacts
+* Contact status tracking
+
+  * Manual
+  * Needs Linking
+  * Linked
+
+### Contact Linking System
+
+* Manual contact creation
+* Automatic WhatsApp contact discovery
+* Link WhatsApp identities to existing contacts
+* Unlink contacts when incorrect matches occur
+* WhatsApp identity preservation during linking/unlinking
+* Duplicate contact prevention
+
+### Dashboard Experience
+
+* WhatsApp-inspired UI
+* Contact editing modal
+* Contact linking modal
+* Contact unlink confirmation modal
+* Real-time toast notification system
+* Responsive desktop/mobile layout
+* Chat simulator for testing workflows
+
+### Testing Tools
+
+* Built-in chat simulator
+* Simulate conversations from different contacts
+* Test rules without using WhatsApp
+* Validate AI responses before deployment
 
 ## Tech Stack
 
@@ -36,43 +98,76 @@ This project combines WhatsApp Web automation with Groq AI to create an intellig
 
 ## Why I Built This
 
-I wanted to explore how AI assistants can be integrated into messaging platforms while maintaining control through a custom dashboard. The project also helped me gain experience with API integrations, frontend/backend communication, state management, and automation workflows.
+I wanted to explore how AI assistants can be integrated into messaging platforms while still providing fine-grained control over automation. The project helped me gain experience with:
+
+* AI integrations
+* Full-stack development
+* State management
+* WhatsApp automation
+* Session persistence
+* Contact identity management
+* Real-time dashboard design
 
 ## Challenges Solved
 
-* Managing WhatsApp authentication sessions
-* Creating a rule engine for automated replies
-* Integrating AI-generated responses
-* Maintaining conversation context across messages
-* Synchronizing dashboard settings with backend services
+### WhatsApp Session Reliability
+
+* LocalAuth corruption handling
+* Session recovery mechanisms
+* Startup health checks
+* Ready-state detection improvements
+
+### Contact Identity Management
+
+* Handling WhatsApp LID identifiers
+* Contact linking and unlinking workflows
+* Duplicate prevention
+* Contact relationship mapping
+
+### Automation Architecture
+
+* Rule-based response engine
+* AI fallback system
+* Contact-level permissions
+* Synchronization between frontend and backend
+
+### User Experience
+
+* Custom modal workflows
+* Toast notification system
+* Responsive dashboard design
+* WhatsApp-style chat simulation
 
 ## Future Improvements
 
-* Persistent chat memory database
+* Persistent database storage (MongoDB/PostgreSQL)
+* Contact notes and AI personalization
+* Search and filtering for contacts
 * Message scheduling
-* Media response support
+* Media and file responses
+* Conversation history viewer
+* Analytics dashboard
+* Role-based access control
 * Docker deployment
+* Cloud hosting support
 
 ## Screenshots
 
-# WhatsApp AI Dashboard
-
-## Dashboard
+### Dashboard
 
 ![Dashboard](screenshots/overview.png)
 
-## Contact Management
+### Contact Management
 
 ![Contacts](screenshots/contacts.png)
 
-## Rules Engine
+### Rules Engine
 
 ![Rules](screenshots/Auto-reply-rules.png)
 
-## Chat Simulator
+### Chat Simulator
 
 ![Simulator](screenshots/chat-simulator.png)
-
 
 ## Getting Started
 
@@ -91,7 +186,7 @@ npm install
 
 ### 3. Create Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file:
 
 ```env
 GROQ_API_KEY=your_groq_api_key
@@ -102,8 +197,6 @@ AUTH_DIR=C:/Users/YOUR_USERNAME/wa-auth
 BROWSER_PATH=C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe
 ```
 
-Adjust the paths to match your system.
-
 ### 4. Start the Backend
 
 ```bash
@@ -112,15 +205,11 @@ npm run server
 
 ### 5. Start the Frontend
 
-Open a second terminal:
-
 ```bash
 npm run dev
 ```
 
 ### 6. Open the Dashboard
-
-Navigate to:
 
 ```text
 http://localhost:5173
@@ -128,29 +217,26 @@ http://localhost:5173
 
 ### 7. Link WhatsApp
 
-On the first run:
-
-1. A QR code will appear in the backend terminal.
-2. Open WhatsApp on your phone.
-3. Go to **Settings → Linked Devices**.
-4. Tap **Link a Device**.
-5. Scan the QR code.
-
-The login session is stored locally, so you normally only need to scan once.
+1. Start the backend.
+2. Scan the QR code using WhatsApp Linked Devices.
+3. The session will be stored locally for future use.
 
 ### 8. Configure the Bot
 
-* Add contacts to the allowlist.
-* Create custom reply rules.
-* Choose a reply mode:
+* Add contacts
+* Enable bot access for selected contacts
+* Create automation rules
+* Select a reply mode
 
-  * **Rules** → Rule-based replies only
-  * **AI** → Groq AI replies only
-  * **Smart** → Rules first, AI fallback
+Reply modes:
 
-### 9. Test the Bot
+* Rules → Rule-based replies only
+* AI → Groq AI replies only
+* Smart → Rules first, AI fallback
 
-Send a message from an allowed contact and verify the bot responds according to the selected mode.
+### 9. Test Using Chat Simulator
+
+Use the built-in simulator to validate rules and AI responses before interacting with real WhatsApp conversations.
 
 ## Build for Production
 
@@ -158,8 +244,7 @@ Send a message from an allowed contact and verify the bot responds according to 
 npm run build
 ```
 
-A successful build generates the production files in the `dist/` directory.
-
+The production build is generated inside the `dist/` directory.
 
 ## Author
 
