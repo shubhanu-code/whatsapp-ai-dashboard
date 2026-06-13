@@ -7,9 +7,29 @@ process.on('unhandledRejection', err => {
 process.on('uncaughtException', err => {
   console.error('UNCAUGHT EXCEPTION:', err);
 });
-console.log("Node:", process.version);
-console.log("whatsapp-web.js:", require('whatsapp-web.js/package.json').version);
-console.log("puppeteer:", require('puppeteer/package.json').version);
+
+let startupWatchdog;
+
+    function startStartupWatchdog() {
+
+      clearTimeout(startupWatchdog);
+
+      startupWatchdog = setTimeout(() => {
+
+        if (whatsappStatus !== 'ready') {
+
+          console.log(
+            'WARNING: Startup stalled'
+          );
+
+        }
+
+      }, 60000);
+
+    }
+
+let whatsappStatus = 'starting';
+let latestQR = null;
 const DATA_DIR = process.env.DATA_DIR || './wa-data';
 const AUTH_DIR = process.env.AUTH_DIR || './wa-auth';
 const BROWSER_PATH = process.env.BROWSER_PATH;
@@ -29,7 +49,7 @@ const cors = require('cors');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
-async function generateAIReplyWithMemory(history) {
+async function generateAIReplyWithMemory(history, contactInfo) {
 
   const completion =
     await groq.chat.completions.create({
@@ -39,12 +59,44 @@ async function generateAIReplyWithMemory(history) {
         {
           role: "system",
           content: `
-You are Shubhanu's WhatsApp assistant.
+          You are Shubhanu replying on WhatsApp.
 
-Reply naturally.
-Keep replies concise.
-Respond as if chatting on WhatsApp.
-`
+          About Shubhanu:
+          - Studies at IIIT Dharwad
+          - Uses WhatsApp casually
+          - Replies naturally
+          - Keeps messages concise
+          - Never says he is an AI
+
+          Current contact:
+          Name: ${contactInfo.name}
+          Relationship: ${contactInfo.relationship}
+          Number: ${contactInfo.number}
+          Relationship guidance:
+
+          - Mother/Father/Parent:
+            Be warm, respectful and caring.
+
+          - Brother/Sister/Cousin:
+            Be casual and friendly.
+
+          - College Friend:
+            Be relaxed, informal and natural.
+
+          - Classmate:
+            Be helpful and collaborative.
+
+          - Recruiter:
+            Be professional and polite.
+
+          - Faculty:
+            Be respectful and concise.
+
+          - Unknown:
+            Be friendly and neutral.
+
+          Reply as Shubhanu would.
+          `
         },
 
         ...history.slice(-12)
@@ -55,6 +107,14 @@ Respond as if chatting on WhatsApp.
 }
 
 const app = express();
+
+// Ensure data directories exist before trying to read/write files
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+if (!fs.existsSync(AUTH_DIR)) {
+  fs.mkdirSync(AUTH_DIR, { recursive: true });
+}
 
 // FIX #10: Restrict CORS to your frontend origin only
 app.use(cors({ origin: 'http://localhost:5173' }));
@@ -112,7 +172,10 @@ app.get('/allowed-contacts', (req, res) => {
 
 app.post('/allowed-contacts', (req, res) => {
   allowedContacts = req.body;
-  safeWriteJSON('${DATA_DIR}/allowedContacts.json', allowedContacts);
+  safeWriteJSON(
+    path.join(DATA_DIR, "allowedContacts.json"),
+    allowedContacts
+  );
   console.log('Allowed Contacts Saved:', allowedContacts.length);
   res.json({ success: true });
 });
@@ -180,7 +243,10 @@ app.post('/contacts', (req, res) => {
     contacts.length
   );
 
-  safeWriteJSON('${DATA_DIR}/contacts.json', contacts);
+  safeWriteJSON(
+    path.join(DATA_DIR, "contacts.json"),
+    contacts
+  );
 
   res.json({
     success: true
@@ -193,7 +259,10 @@ app.get('/settings', (req, res) => {
 
 app.post('/settings', (req, res) => {
   settings = req.body;
-  safeWriteJSON('${DATA_DIR}/settings.json', settings);
+  safeWriteJSON(
+    path.join(DATA_DIR, "settings.json"),
+    settings
+  );
   console.log('NEW MODE:', settings.replyMode);
   res.json({ success: true });
 });
@@ -204,96 +273,156 @@ app.get('/rules', (req, res) => {
 
 app.post('/rules', (req, res) => {
   rules = req.body;
-  safeWriteJSON('${DATA_DIR}/rules.json', rules);
+  safeWriteJSON(
+    path.join(DATA_DIR, "rules.json"),
+    rules
+  );
   console.log('Rules Saved:', rules.length);
   res.json({ success: true });
+});
+app.get('/status', (req, res) => {
+
+  res.json({
+    whatsappStatus,
+    hasQR: !!latestQR
+  });
+
 });
 
 // ── WhatsApp Client ─────────────────────────────────────────────────────────
 
 const client = new Client({
   authStrategy: new LocalAuth({
-    dataPath: AUTH_DIR }), // ← change this to your own path
-  
-    puppeteer: {
-      executablePath: BROWSER_PATH,
-      headless: false,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-background-timer-throttling',
-        '--disable-renderer-backgrounding',
-        '--disable-extensions'
-      ]
-    }
+    clientId: 'main',
+    dataPath: AUTH_DIR
+  }),
+
+  puppeteer: {
+    executablePath: BROWSER_PATH,
+    headless: false, //Run visible Brave window for local development
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-background-timer-throttling',
+      '--disable-renderer-backgrounding',
+      '--disable-extensions',
+      '--disable-gpu' // FIX: avoids GPU-related crashes in headless/container environments
+    ]
+  }
 });
 
 client.on('qr', qr => {
+
+  whatsappStatus = 'qr';
+  latestQR = qr;
+
   console.log('QR GENERATED');
-  qrcode.generate(qr, { small: true });
+
+  qrcode.generate(qr, {
+    small: true
+  });
+
 });
 
 client.on('loading_screen', (percent, message) => {
   console.log('LOADING:', percent, message);
 });
 
-client.on('authenticated', async () => {
+client.on('authenticated', () => {
 
-  setTimeout(() => {
+  console.log('AUTHENTICATED');
+
+  setTimeout(async () => {
 
     try {
 
-      const page = client.pupPage;
+      const chats =
+        await client.getChats();
 
-      page.on('framenavigated', frame => {
+      console.log(
+        'CHAT COUNT:',
+        chats.length
+      );
 
-        if (frame === page.mainFrame()) {
+      if (chats.length > 10) {
 
-          console.log(
-            'NAVIGATED:',
-            frame.url()
-          );
+        whatsappStatus = 'ready';
 
-        }
+        console.log(
+          'READY VIA HEALTH CHECK'
+        );
 
-      });
+      }
 
     } catch (err) {
 
-      console.error(err);
+      console.error(
+        'HEALTH CHECK FAILED:',
+        err
+      );
 
     }
 
-  }, 1000);
+  }, 15000);
 
 });
-client.on('auth_failure', msg => {
-  console.log('AUTH FAILURE:', msg);
+
+// FIX: auth_failure now triggers reinit instead of leaving the client dead forever
+client.on('auth_failure', async msg => {
+
+  console.log(
+    'AUTH FAILURE:',
+    msg
+  );
+
+  whatsappStatus =
+    'auth_failure';
+
 });
 
-client.on('disconnected', reason => {
-  console.log('DISCONNECTED:', reason);
+client.on('disconnected', async reason => {
+  whatsappStatus = 'disconnected';
+  console.log(
+    'DISCONNECTED:',
+    reason
+  );
+
+  try {
+
+    await client.destroy();
+
+  } catch {}
+
+  setTimeout(() => {
+
+    console.log(
+      'REINITIALIZING...'
+    );
+
+    client.initialize().catch(err => {
+      console.error('REINIT FAILED:', err); // FIX: catch so unhandledRejection doesn't swallow the real error silently
+    });
+
+  }, 5000);
+
 });
 
 client.on('change_state', state => {
   console.log('STATE:', state);
 });
 
-client.on('ready', async () => {
-  console.log('=== READY EVENT FIRED ===');
-  try {
-    const chats = await client.getChats();
-    console.log('Chats Found:', chats.length);
-  } catch (err) {
-    console.error(err);
-  }
-});
 client.on('ready', () => {
+  clearTimeout(startupWatchdog);
+  whatsappStatus = 'ready';
 
   const seconds =
     ((Date.now() - startTime) / 1000)
       .toFixed(1);
+
+  console.log(
+    '=== READY EVENT FIRED ==='
+  );
 
   console.log(
     `READY after ${seconds}s`
@@ -306,9 +435,13 @@ client.on('message_create', msg => {
   console.log('FROMME:', msg.fromMe);
 });
 
-async function generateAIReply(history) {
-  return await generateAIReplyWithMemory(history);
-}
+client.on('message', msg => {
+  console.log('MESSAGE EVENT:', msg.body);
+});
+
+client.on('message_reaction', () => {
+  console.log('REACTION EVENT');
+});
 
 client.on('message', async msg => {
 
@@ -319,6 +452,57 @@ client.on('message', async msg => {
   const text = msg.body.toLowerCase();
   const sender = msg.from;
 
+  const contact =
+    await msg.getContact();
+
+  const savedContact =
+    contacts.find(
+      c => c.whatsappId === sender
+    );
+
+const contactInfo = {
+
+  name:
+    savedContact?.name ||
+    contact.pushname ||
+    contact.name ||
+    "Unknown",
+
+  relationship:
+    savedContact?.relationship ||
+    "Unknown",
+
+  number:
+    sender
+
+};
+
+  const exists = contacts.some(
+    c => c.whatsappId === sender
+  );
+
+if (!exists) {
+
+  contacts.push({
+    id: Date.now().toString(),
+    name: contactInfo.name,
+    phone: "",
+    whatsappId: sender,
+    botEnabled: false,
+    relationship: "Unknown"
+  });
+
+  safeWriteJSON(
+    path.join(DATA_DIR, "contacts.json"),
+    contacts
+  );
+
+  console.log(
+    "NEW CONTACT SAVED:",
+    contactInfo.name
+  );
+
+}
   console.log('FROM:', sender);
   console.log('MODE:', settings.replyMode);
   console.log('MESSAGE:', msg.body);
@@ -345,13 +529,17 @@ client.on('message', async msg => {
     return;
   }
 
-  const matchedRule = rules.find(
-    r =>
-      r.isActive &&
-      text.includes(
-        r.keyword.toLowerCase()
-      )
-  );
+  const matchedRule = rules.find(r => {
+    if (!r.isActive) return false;
+    const msgText = text.trim();
+    const keyword = (r.keyword || '').toLowerCase().trim();
+    
+    // Check matchType (fallback to 'contains' if undefined)
+    if (r.matchType === 'exact') {
+      return msgText === keyword;
+    }
+    return msgText.includes(keyword);
+  });
 
   if (settings.replyMode === 'rules') {
 
@@ -376,20 +564,37 @@ client.on('message', async msg => {
       role: "user",
       content: msg.body
     });
-
-    const aiReply =
-  await generateAIReplyWithMemory(history);
-
-    history.push({
-      role: "assistant",
-      content: aiReply
-    });
-
-    if (history.length > 12) {
-      history.splice(0, history.length - 12);
+    if (history.length > 20) {
+      history.splice(0, history.length - 20);
     }
 
-    await msg.reply(aiReply);
+    try {
+
+      const aiReply =
+        await generateAIReplyWithMemory(
+          history,
+          contactInfo
+        );
+
+      history.push({
+        role: "assistant",
+        content: aiReply
+      });
+
+      await msg.reply(aiReply);
+
+    } catch (err) {
+
+      console.error(
+        "AI REPLY ERROR:",
+        err
+      );
+
+      await msg.reply(
+        "Sorry, I'm having trouble replying right now."
+      );
+
+    }
 
     return;
   }
@@ -416,34 +621,42 @@ client.on('message', async msg => {
       content: msg.body
     });
 
-    const aiReply =
-  await generateAIReplyWithMemory(history);
+    try {
 
-    history.push({
-      role: "assistant",
-      content: aiReply
-    });
+      const aiReply =
+        await generateAIReplyWithMemory(
+          history,
+          contactInfo
+        );
 
-    if (history.length > 12) {
-      history.splice(0, history.length - 12);
+      history.push({
+        role: "assistant",
+        content: aiReply
+      });
+
+      await msg.reply(
+        aiReply
+      );
+
+    } catch (err) {
+
+      console.error(
+        "AI REPLY ERROR:",
+        err
+      );
+
     }
-
-    await msg.reply(
-      aiReply
-    );
   }
 
 });
 
-
 (async () => {
-
   try {
-
+    startStartupWatchdog();
     await client.initialize();
 
     console.log(
-      "INITIALIZE SUCCESS"
+      "INITIALIZE CALL COMPLETED"
     );
 
   } catch (err) {
@@ -453,9 +666,28 @@ client.on('message', async msg => {
       err
     );
 
-  }
+    whatsappStatus =
+      'init_failed';
 
+    setTimeout(() => {
+
+      console.log(
+        'RETRYING INITIALIZE...'
+      );
+
+      client.initialize()
+        .catch(e =>
+          console.error(
+            'RETRY FAILED:',
+            e
+          )
+        );
+
+    }, 10000);
+
+  }
 })();
+
 
 app.listen(5000, () => {
   console.log('Server running on port 5000');
