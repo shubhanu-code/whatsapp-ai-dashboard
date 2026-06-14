@@ -7,6 +7,8 @@ const {
   addMessage,
   getChats
 } = require("./services/chatService");
+const chatRoutes =
+  require("./routes/chatRoutes");
 
 process.on('uncaughtException', err => {
   console.error('UNCAUGHT EXCEPTION:', err);
@@ -123,6 +125,7 @@ if (!fs.existsSync(AUTH_DIR)) {
 // FIX #10: Restrict CORS to your frontend origin only
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
+app.use("/chats", chatRoutes);
 
 // FIX #8: Safe file reads — server won't crash if JSON files are missing
 function safeReadJSON(filePath, fallback) {
@@ -452,18 +455,7 @@ client.on('message', async msg => {
   if (msg.fromMe) {
     return;
   }
-  addMessage({
-    id: Date.now().toString(),
-    contactId: msg.from,
-    contactName:
-      contact.pushname ||
-      contact.name ||
-      "Unknown",
-    message: msg.body,
-    direction: "incoming",
-    timestamp: new Date().toISOString()
-  });
-
+  
   const text = msg.body.toLowerCase();
   const sender = msg.from;
 
@@ -475,23 +467,30 @@ client.on('message', async msg => {
       c => c.whatsappId === sender
     );
 
-const contactInfo = {
+  const contactInfo = {
 
-  name:
-    savedContact?.name ||
-    contact.pushname ||
-    contact.name ||
-    "Unknown",
+    name:
+      savedContact?.name ||
+      contact.pushname ||
+      contact.name ||
+      "Unknown",
 
-  relationship:
-    savedContact?.relationship ||
-    "Unknown",
+    relationship:
+      savedContact?.relationship ||
+      "Unknown",
 
-  number:
-    sender
+    number:
+      sender
 
-};
-
+  };
+  addMessage({
+    id: Date.now().toString(),
+    contactId: sender,
+    contactName: contactInfo.name,
+    message: msg.body,
+    direction: "incoming",
+    timestamp: new Date().toISOString()
+  });
   const exists = contacts.some(
     c => c.whatsappId === sender
   );
@@ -681,15 +680,6 @@ if (!exists) {
       await msg.reply(
         aiReply
       );
-
-      addMessage({
-        id: Date.now().toString(),
-        contactId: sender,
-        contactName: contactInfo.name,
-        message: aiReply,
-        direction: "outgoing",
-        timestamp: new Date().toISOString()
-      });
 
     } catch (err) {
 
