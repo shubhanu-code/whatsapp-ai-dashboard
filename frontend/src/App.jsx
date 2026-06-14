@@ -1085,6 +1085,66 @@ const ChatSimulator = ({ rules, contacts, setStats, replyMode, setReplyMode }) =
     </div>
   );
 };
+const Inbox = () => {
+
+  const [conversations, setConversations] =
+    useState([]);
+
+  useEffect(() => {
+
+    fetch(
+      `${API_BASE}/chats/conversations`
+    )
+      .then(res => res.json())
+      .then(setConversations)
+      .catch(console.error);
+
+  }, []);
+
+  return (
+    <div className="space-y-6">
+
+      <h2 className="text-xl font-bold text-slate-800">
+        Inbox
+      </h2>
+
+      <div className="bg-white rounded-xl border border-slate-200">
+
+        {conversations.length === 0 ? (
+          <div className="p-6 text-slate-500">
+            No conversations found
+          </div>
+        ) : (
+          conversations.map(conv => (
+            <div
+              key={conv.contactId}
+              className="
+                p-4
+                border-b
+                hover:bg-slate-50
+                cursor-pointer
+              "
+            >
+              <div className="font-semibold">
+                {conv.contactName}
+              </div>
+
+              <div className="text-sm text-slate-500 mt-1">
+                {conv.lastMessage}
+              </div>
+
+              <div className="text-xs text-slate-400 mt-1">
+                {conv.messageCount} messages
+              </div>
+            </div>
+          ))
+        )}
+
+      </div>
+
+    </div>
+  );
+};
 
 export default function App() {
   useEffect(() => {
@@ -1144,6 +1204,7 @@ export default function App() {
     { id: 'contacts', label: 'Contacts', icon: Users },
     { id: 'rules', label: 'Auto-Reply Rules', icon: SquareCode },
     { id: 'simulator', label: 'Chat Simulator', icon: Smartphone },
+    { id: 'inbox', label: 'Inbox', icon: Send }
   ];
 
   const renderOverview = () => (
@@ -1445,6 +1506,9 @@ export default function App() {
         )}
         {activeTab === 'simulator' && (
           <ChatSimulator rules={rules} contacts={contacts} setStats={setStats} replyMode={replyMode} setReplyMode={setReplyMode} />
+        )}
+        {activeTab === 'inbox' && (
+          <Inbox />
         )}
       </main>
     </div>
