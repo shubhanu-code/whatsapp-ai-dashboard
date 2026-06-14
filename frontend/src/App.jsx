@@ -1086,13 +1086,9 @@ const ChatSimulator = ({ rules, contacts, setStats, replyMode, setReplyMode }) =
   );
 };
 const Inbox = () => {
-  const [selectedConversation,
-    setSelectedConversation] =
-    useState(null);
-
-  const [messages,
-    setMessages] =
-    useState([]);
+  const [selectedConversation,setSelectedConversation] = useState(null);
+  const [messages,setMessages] =useState([]);
+  const [replyText, setReplyText] = useState("");
   const loadMessages = async (
     contactId
   ) => {
@@ -1109,6 +1105,50 @@ const Inbox = () => {
 
   };
 
+  const sendReply = async () => {
+
+    if (
+      !selectedConversation ||
+      !replyText.trim()
+    ) {
+      return;
+    }
+
+    try {
+
+      await fetch(
+        `${API_BASE}/chats/send`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body: JSON.stringify({
+            contactId:
+              selectedConversation.contactId,
+
+            message:
+              replyText
+          })
+        }
+      );
+
+      await loadMessages(
+        selectedConversation.contactId
+      );
+
+      setReplyText("");
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
 
   const [conversations, setConversations] =
     useState([]);
@@ -1221,7 +1261,36 @@ const Inbox = () => {
                   </div>
 
                 ))}
+                <div className="border-t mt-4 pt-4 flex gap-2">
 
+                  <input
+                    value={replyText}
+                    onChange={(e) =>
+                      setReplyText(e.target.value)
+                    }
+                    placeholder="Type a message..."
+                    className="
+                      flex-1
+                      border
+                      rounded-xl
+                      px-4
+                      py-2
+                    "
+                  />
+
+                  <button
+                    onClick={sendReply}
+                    className="
+                      bg-emerald-600
+                      text-white
+                      px-4
+                      rounded-xl
+                    "
+                  >
+                    Send
+                  </button>
+
+                </div>
               </div>
             </>
 

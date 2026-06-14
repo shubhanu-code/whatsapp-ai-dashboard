@@ -142,5 +142,37 @@
     "message": "Aayen",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:06:00.807Z"
+  },
+  {
+    "id": "1781460236347",
+    "contactId": "184425929281589@lid",
+    "contactName": "184425929281589@lid",
+    "message": "Hii this a testing from dashboard",
+    "direction": "outgoing",
+    "timestamp": "2026-06-14T18:03:56.347Z"
+  },
+  {
+    "id": "1781460252171",
+    "contactId": "184425929281589@lid",
+    "contactName": "184425929281589@lid",
+    "message": "yes",
+    "direction": "outgoing",
+    "timestamp": "2026-06-14T18:04:12.171Z"
+  },
+  {
+    "id": "1781460327077",
+    "contactId": "184425929281589@lid",
+    "contactName": "shubhanu pms",
+    "message": "Okay",
+    "direction": "incoming",
+    "timestamp": "2026-06-14T18:05:27.077Z"
+  },
+  {
+    "id": "1781460367637",
+    "contactId": "184425929281589@lid",
+    "contactName": "184425929281589@lid",
+    "message": "hello",
+    "direction": "outgoing",
+    "timestamp": "2026-06-14T18:06:07.638Z"
   }
 ]

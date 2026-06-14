@@ -318,6 +318,7 @@ const client = new Client({
     ]
   }
 });
+global.waClient = client;
 
 client.on('qr', qr => {
 

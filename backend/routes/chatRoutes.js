@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  getChats
+  getChats,
+  addMessage
 } = require("../services/chatService");
 
 router.get("/", (req, res) => {
@@ -56,6 +57,51 @@ router.get("/:contactId", (req, res) => {
   );
 
   res.json(messages);
+
+});
+
+router.post("/send", async (req, res) => {
+
+  try {
+
+    const { contactId, message } =
+      req.body;
+
+    if (!contactId || !message) {
+
+      return res.status(400).json({
+        error: "Missing fields"
+      });
+
+    }
+
+    await global.waClient.sendMessage(
+      contactId,
+      message
+    );
+
+    addMessage({
+      id: Date.now().toString(),
+      contactId,
+      contactName: contactId,
+      message,
+      direction: "outgoing",
+      timestamp: new Date().toISOString()
+    });
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
 
 });
 
