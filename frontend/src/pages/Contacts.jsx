@@ -83,38 +83,88 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
   };
 
   const handleDelete = async (id) => {
-    const updatedContacts = contacts.filter(c => c.id !== id);
-    const updatedRules = rules.map(r => r.targetContact === id ? { ...r, targetContact: 'all' } : r);
+    const updatedContacts = contacts.filter(
+        c => c.id !== id
+    );
 
-    setContacts(updatedContacts);
-    setRules(updatedRules);
+    const updatedRules = rules.map(
+        r =>
+        r.targetContact === id
+            ? { ...r, targetContact: "all" }
+            : r
+    );
 
-    await Promise.all([
-      saveContacts(updatedContacts),
-      saveAllowedContacts(updatedContacts),
-      fetch(`${API_BASE}/rules`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedRules)
-      })
-    ]);
-  };
+    try {
+
+        setContacts(updatedContacts);
+        setRules(updatedRules);
+
+        await Promise.all([
+        saveContacts(updatedContacts),
+        saveAllowedContacts(updatedContacts),
+        fetch(`${API_BASE}/rules`, {
+            method: "POST",
+            headers: {
+            "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updatedRules)
+        })
+        ]);
+
+        showToast(
+        "Contact deleted successfully"
+        );
+
+    } catch (err) {
+
+        console.error(err);
+
+        showToast(
+        "Failed to delete contact",
+        "error"
+        );
+
+    }
+    };
 
   const toggleBot = async (id) => {
+
     const updated = contacts.map(c =>
-      c.id === id ? { ...c, botEnabled: !c.botEnabled } : c
+        c.id === id
+        ? { ...c, botEnabled: !c.botEnabled }
+        : c
     );
 
-    setContacts(updated);
+    try {
 
-    await Promise.all([
-      saveContacts(updated),
-      saveAllowedContacts(updated)
-    ]);
-    showToast(
-      "Contact deleted"
-    );
-  };
+        setContacts(updated);
+
+        await Promise.all([
+        saveContacts(updated),
+        saveAllowedContacts(updated)
+        ]);
+
+        const contact = contacts.find(
+        c => c.id === id
+        );
+
+        showToast(
+        contact?.botEnabled
+            ? "Bot disabled successfully"
+            : "Bot enabled successfully"
+        );
+
+    } catch (err) {
+
+        console.error(err);
+
+        showToast(
+        "Failed to update bot status",
+        "error"
+        );
+
+    }
+    };
   const updateRelationship = async (
     contactId,
     relationship
