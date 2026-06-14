@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1781447513042",
+    "contactId": "120363425028047601@g.us",
+    "message": "Should work fine",
+    "direction": "incoming",
+    "timestamp": "2026-06-14T14:31:53.042Z"
+  },
+  {
+    "id": "1781447535101",
+    "contactId": "184425929281589@lid",
+    "message": "Hello",
+    "direction": "incoming",
+    "timestamp": "2026-06-14T14:32:15.101Z"
+  },
+  {
+    "id": "1781447535682",
+    "contactId": "184425929281589@lid",
+    "message": "Hey, how r u?",
+    "direction": "outgoing",
+    "timestamp": "2026-06-14T14:32:15.683Z"
+  },
+  {
+    "id": "1781447696908",
+    "contactId": "120363419248075061@g.us",
+    "message": "4.5+ months of holidays 🫡",
+    "direction": "incoming",
+    "timestamp": "2026-06-14T14:34:56.908Z"
+  }
+]

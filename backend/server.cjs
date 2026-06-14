@@ -3,6 +3,10 @@ const startTime = Date.now();
 process.on('unhandledRejection', err => {
   console.error('UNHANDLED REJECTION:', err);
 });
+const {
+  addMessage,
+  getChats
+} = require("./services/chatService");
 
 process.on('uncaughtException', err => {
   console.error('UNCAUGHT EXCEPTION:', err);
@@ -448,6 +452,17 @@ client.on('message', async msg => {
   if (msg.fromMe) {
     return;
   }
+  addMessage({
+    id: Date.now().toString(),
+    contactId: msg.from,
+    contactName:
+      contact.pushname ||
+      contact.name ||
+      "Unknown",
+    message: msg.body,
+    direction: "incoming",
+    timestamp: new Date().toISOString()
+  });
 
   const text = msg.body.toLowerCase();
   const sender = msg.from;
@@ -547,6 +562,15 @@ if (!exists) {
       await msg.reply(
         matchedRule.reply
       );
+
+      addMessage({
+        id: Date.now().toString(),
+        contactId: sender,
+        contactName: contactInfo.name,
+        message: matchedRule.reply,
+        direction: "outgoing",
+        timestamp: new Date().toISOString()
+      });
     }
 
     return;
@@ -583,6 +607,15 @@ if (!exists) {
 
       await msg.reply(aiReply);
 
+      addMessage({
+        id: Date.now().toString(),
+        contactId: sender,
+        contactName: contactInfo.name,
+        message: aiReply,
+        direction: "outgoing",
+        timestamp: new Date().toISOString()
+      });
+
     } catch (err) {
 
       console.error(
@@ -606,6 +639,17 @@ if (!exists) {
       await msg.reply(
         matchedRule.reply
       );
+
+      addMessage({
+        id: Date.now().toString(),
+        contactId: sender,
+        contactName: contactInfo.name,
+        message: matchedRule.reply,
+        direction: "outgoing",
+        timestamp: new Date().toISOString()
+      });
+
+      return;
 
       return;
     }
@@ -637,6 +681,15 @@ if (!exists) {
       await msg.reply(
         aiReply
       );
+
+      addMessage({
+        id: Date.now().toString(),
+        contactId: sender,
+        contactName: contactInfo.name,
+        message: aiReply,
+        direction: "outgoing",
+        timestamp: new Date().toISOString()
+      });
 
     } catch (err) {
 
