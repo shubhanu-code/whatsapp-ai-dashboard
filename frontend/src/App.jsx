@@ -1086,6 +1086,29 @@ const ChatSimulator = ({ rules, contacts, setStats, replyMode, setReplyMode }) =
   );
 };
 const Inbox = () => {
+  const [selectedConversation,
+    setSelectedConversation] =
+    useState(null);
+
+  const [messages,
+    setMessages] =
+    useState([]);
+  const loadMessages = async (
+    contactId
+  ) => {
+
+    const response =
+      await fetch(
+        `${API_BASE}/chats/${encodeURIComponent(contactId)}`
+      );
+
+    const data =
+      await response.json();
+
+    setMessages(data);
+
+  };
+
 
   const [conversations, setConversations] =
     useState([]);
@@ -1102,29 +1125,45 @@ const Inbox = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
 
       <h2 className="text-xl font-bold text-slate-800">
         Inbox
       </h2>
 
-      <div className="bg-white rounded-xl border border-slate-200">
+      <div className="flex h-[700px] bg-white rounded-xl border border-slate-200">
 
-        {conversations.length === 0 ? (
-          <div className="p-6 text-slate-500">
-            No conversations found
-          </div>
-        ) : (
-          conversations.map(conv => (
+        {/* Left Panel */}
+
+        <div className="w-1/3 border-r overflow-y-auto">
+
+          {conversations.map(conv => (
+
             <div
               key={conv.contactId}
-              className="
+              onClick={() => {
+
+                setSelectedConversation(conv);
+
+                loadMessages(
+                  conv.contactId
+                );
+
+              }}
+              className={`
                 p-4
                 border-b
-                hover:bg-slate-50
                 cursor-pointer
-              "
+                hover:bg-slate-50
+                ${
+                  selectedConversation?.contactId ===
+                  conv.contactId
+                    ? "bg-emerald-50"
+                    : ""
+                }
+              `}
             >
+
               <div className="font-semibold">
                 {conv.contactName}
               </div>
@@ -1133,12 +1172,62 @@ const Inbox = () => {
                 {conv.lastMessage}
               </div>
 
-              <div className="text-xs text-slate-400 mt-1">
-                {conv.messageCount} messages
-              </div>
             </div>
-          ))
-        )}
+
+          ))}
+
+        </div>
+
+        {/* Right Panel */}
+
+        <div className="flex-1 p-4 overflow-y-auto">
+
+          {!selectedConversation ? (
+
+            <div className="text-slate-400">
+              Select a conversation
+            </div>
+
+          ) : (
+
+            <>
+              <h3 className="font-bold text-lg mb-4">
+                {selectedConversation.contactName}
+              </h3>
+
+              <div className="space-y-3">
+
+                {messages.map(msg => (
+
+                  <div
+                    key={msg.id}
+                    className={`flex ${
+                      msg.direction === "outgoing"
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
+                  >
+
+                    <div
+                      className={`max-w-[70%] px-4 py-2 rounded-xl ${
+                        msg.direction === "outgoing"
+                          ? "bg-green-100"
+                          : "bg-slate-100"
+                      }`}
+                    >
+                      {msg.message}
+                    </div>
+
+                  </div>
+
+                ))}
+
+              </div>
+            </>
+
+          )}
+
+        </div>
 
       </div>
 

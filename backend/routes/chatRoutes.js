@@ -46,5 +46,17 @@ router.get("/conversations", (req, res) => {
   );
 
 });
+router.get("/:contactId", (req, res) => {
+
+  const chats = getChats();
+
+  const messages = chats.filter(
+    chat =>
+      chat.contactId === req.params.contactId
+  );
+
+  res.json(messages);
+
+});
 
 module.exports = router;
