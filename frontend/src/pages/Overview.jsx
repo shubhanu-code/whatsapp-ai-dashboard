@@ -90,7 +90,7 @@ export default function Overview({
 
                         setReplyMode(mode);
 
-                        const response = await fetch(`${API_BASE}/settings`, {
+                        await fetch(`${API_BASE}/settings`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"
