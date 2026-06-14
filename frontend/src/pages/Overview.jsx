@@ -1,0 +1,144 @@
+import {
+    Bot,
+    Users,
+    SquareCode,
+    CheckCircle2
+} from "lucide-react";
+
+import { API_BASE } from "../services/api";
+
+export default function Overview({
+    rules,
+    contacts,
+    stats,
+    replyMode,
+    setReplyMode
+}) {
+    return (
+    
+        <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+            <h2 className="text-xl font-bold text-slate-800 tracking-tight pb-2">Dashboard Overview</h2>
+            
+            {/* WhatsApp AI Banner Component */}
+            <div className="bg-gradient-to-r from-emerald-600 to-[#075e54] text-white p-7 rounded-2xl relative overflow-hidden shadow-sm">
+                <div className="relative z-10 max-w-xl">
+                <h3 className="font-bold text-2xl tracking-wide">
+                    WhatsApp AI Dashboard
+                </h3>
+                <p className="text-white/80 text-sm mt-1.5 font-medium">
+                    AI-Powered WhatsApp Automation Platform
+                </p>
+                <div className="mt-6 text-xs text-white/60 font-medium tracking-wide">
+                    Developed by Shubhanu Chatterjee
+                </div>
+                </div>
+                
+                {/* Subtle Decorative Background Wave Icon */}
+                <div className="absolute right-6 bottom-0 top-0 flex items-center justify-center opacity-10 pointer-events-none">
+                <Bot size={180} strokeWidth={1} />
+                </div>
+            </div>
+
+            {/* Grid Cards Container */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="bg-[#f8f9fa] p-5 rounded-xl border border-slate-200/40 flex items-center justify-between">
+                <div className="space-y-1">
+                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Active Rules</p>
+                    <p className="text-3xl font-extrabold text-slate-800">{rules.filter(r => r.isActive).length}</p>
+                </div>
+                <div className="p-3 bg-white text-emerald-600 rounded-xl shadow-sm border border-slate-100">
+                    <SquareCode size={22} />
+                </div>
+                </div>
+
+                <div className="bg-[#f8f9fa] p-5 rounded-xl border border-slate-200/40 flex items-center justify-between">
+                <div className="space-y-1">
+                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Saved Contacts</p>
+                    <p className="text-3xl font-extrabold text-slate-800">{contacts.length}</p>
+                </div>
+                <div className="p-3 bg-white text-emerald-600 rounded-xl shadow-sm border border-slate-100">
+                    <Users size={22} />
+                </div>
+                </div>
+
+                <div className="bg-[#f8f9fa] p-5 rounded-xl border border-slate-200/40 flex items-center justify-between">
+                <div className="space-y-1">
+                    <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Bot Replies Sent</p>
+                    <p className="text-3xl font-extrabold text-slate-800">{stats.messagesSent}</p>
+                </div>
+                <div className="p-3 bg-white text-emerald-600 rounded-xl shadow-sm border border-slate-100">
+                    <Bot size={22} />
+                </div>
+                </div>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200/50 shadow-sm p-6">
+                <h3 className="text-[15px] font-bold text-slate-800 tracking-tight mb-5">
+                AI Configuration
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Reply Mode
+                    </label>
+
+                    <select
+                    value={replyMode}
+                    onChange={async (e) => {
+                        const mode = e.target.value;
+
+                        setReplyMode(mode);
+
+                        const response = await fetch(`${API_BASE}/settings`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            replyMode: mode,
+                        })
+                        });
+                    }}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium"
+                    >
+                    <option value="rules">Rules Only</option>
+                    <option value="ai">AI Only</option>
+                    <option value="smart">Smart Mode</option>
+                    </select>
+                </div>
+
+                </div>
+            </div>
+            {/* Quick Start Guide Card Section */}
+            <div className="bg-white rounded-2xl border border-slate-200/50 shadow-sm p-6 space-y-4">
+                <h3 className="text-[15px] font-bold text-slate-800 tracking-tight">
+                Quick Start Guide
+                </h3>
+                <ul className="space-y-3.5 text-slate-600 text-sm">
+                <li className="flex items-start gap-3 leading-relaxed">
+                    <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={17} />
+                    <span>Add contacts and enable the bot for approved contacts in the <span className="text-emerald-600 font-bold">Contacts</span> tab.</span>
+                </li>
+                <li className="flex items-start gap-3 leading-relaxed">
+                    <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={17} />
+                    <span>Create keyword-based automations in <span className="text-emerald-600 font-bold">Auto-Reply Rules</span> for instant responses.</span>
+                </li>
+                <li className="flex items-start gap-3 leading-relaxed">
+                    <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={17} />
+                    <span>Choose between <span className="text-emerald-600 font-bold">Rules Mode</span> , <span className="text-emerald-600 font-bold">AI Mode</span> , or <span className="text-emerald-600 font-bold">Smart Mode</span> to control how the bot responds.</span>
+                </li>
+                <li className="flex items-start gap-3 leading-relaxed">
+                    <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={17} />
+                    <span>Smart Mode automatically uses Groq AI whenever no matching rule is found.</span>
+                </li>
+                <li className="flex items-start gap-3 leading-relaxed">
+                    <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={17} />
+                    <span>Monitor activity and test conversations directly from the dashboard before going live.</span>
+                </li>
+                </ul>
+            </div>
+            </div>
+    );
+}
+
