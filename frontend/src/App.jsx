@@ -11,6 +11,8 @@ import {
   User,
   CheckCircle2,
   SquareCode,
+  Sun,
+  Moon,
   X
 } from 'lucide-react';
 
@@ -40,7 +42,18 @@ export default function App() {
   const [stats, setStats] = useState({ messagesSent: 0, messagesReceived: 0 });
   const [replyMode, setReplyMode] = useState("smart");
   const [toast, setToast] = useState(null);
+  const [darkMode, setDarkMode] = useState(localStorage.getItem("theme") === "dark");
 
+
+
+  useEffect(() => {
+    localStorage.setItem(
+      "theme",
+      darkMode ? "dark" : "light"
+    );
+  }, [darkMode]);
+
+  
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
@@ -92,7 +105,23 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex flex-col md:flex-row font-sans text-slate-800 antialiased">
+    <div
+      className={`
+        min-h-screen
+        flex
+        flex-col
+        md:flex-row
+        font-sans
+        antialiased
+        transition-colors
+        duration-300
+        ${
+          darkMode
+            ? "bg-[#0b141a] text-white"
+            : "bg-[#f8f9fa] text-slate-800"
+        }
+      `}
+    >
         <Toast
           toast={toast}
           setToast={setToast}
@@ -117,10 +146,62 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         navItems={navItems}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
       />
 
       {/* Primary Window Viewing Arena */}
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto max-w-5xl">
+      <main
+      
+        className={`
+          flex-1
+          p-6
+          md:p-8
+          overflow-y-auto
+          ${
+            darkMode
+              ? "bg-[#0b141a]"
+              : ""
+          }
+        `}
+      >
+        <div className="flex justify-end mb-4">
+
+          <button
+            onClick={() =>
+              setDarkMode(!darkMode)
+            }
+            className={`
+              flex
+              items-center
+              gap-2
+              px-4
+              py-2
+              rounded-xl
+              transition-all
+              ${
+                darkMode
+                  ? "bg-[#202c33] text-white hover:bg-[#2a3942]"
+                  : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+              }
+            `}
+          >
+
+            {darkMode ? (
+              <Sun size={18} />
+            ) : (
+              <Moon size={18} />
+            )}
+
+            <span>
+              {darkMode
+                ? "Light Mode"
+                : "Dark Mode"}
+            </span>
+
+          </button>
+
+        </div>
         {activeTab === 'overview' && <Overview
                                         rules={rules}
                                         contacts={contacts}
@@ -155,7 +236,9 @@ export default function App() {
           <Simulator rules={rules} contacts={contacts} setStats={setStats} replyMode={replyMode} setReplyMode={setReplyMode} />
         )}
         {activeTab === 'inbox' && (
-          <Inbox />
+          <Inbox
+            darkMode={darkMode}
+          />
         )}
       </main>
     </div>

@@ -28,7 +28,7 @@ function saveChats(chats) {
 
 function addMessage(message) {
 
-  chats = getChats();
+  const chats = getChats();
 
   chats.push({
     ...message,

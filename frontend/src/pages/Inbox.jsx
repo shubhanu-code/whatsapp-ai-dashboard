@@ -9,7 +9,7 @@ import {
   getMessages,
   sendMessage,
 } from "../services/api";
-const Inbox = () => {
+const Inbox = ({darkMode}) => {
   const [selectedConversation,setSelectedConversation] = useState(null);
   const [messages,setMessages] =useState([]);
   const [replyText, setReplyText] = useState("");
@@ -17,7 +17,8 @@ const Inbox = () => {
   const messagesContainerRef = useRef(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [contextMenu, setContextMenu] =useState(null);
+  const [contextMenu,setContextMenu] =useState(null);
+  const [messageMenu,setMessageMenu] =useState(null);
   const loadMessages = async (
     contactId
   ) => {
@@ -32,6 +33,7 @@ const Inbox = () => {
 
     const closeMenu = () => {
       setContextMenu(null);
+      setMessageMenu(null);
     };
 
     window.addEventListener(
@@ -97,34 +99,117 @@ const Inbox = () => {
     }
 
   };
-const togglePin = async (
-  contactId
-) => {
+  const togglePin = async (
+    contactId
+  ) => {
 
-  try {
+    try {
 
-    await fetch(
-      `http://localhost:5000/chats/pin/${contactId}`,
-      {
-        method: "POST"
-      }
-    );
+      await fetch(
+        `http://localhost:5000/chats/pin/${contactId}`,
+        {
+          method: "POST"
+        }
+      );
 
-    const updated =
-      await getConversations();
+      const updated =
+        await getConversations();
 
-    setConversations(updated);
+      setConversations(updated);
 
-    setContextMenu(null);
+      setContextMenu(null);
 
-  } catch (err) {
+    } catch (err) {
 
-    console.error(err);
+      console.error(err);
 
-  }
+    }
 
-};
+  };
 
+  const toggleFavorite = async (
+    contactId
+  ) => {
+
+    try {
+
+      await fetch(
+        `http://localhost:5000/chats/favorite/${contactId}`,
+        {
+          method: "POST"
+        }
+      );
+
+      const updated =
+        await getConversations();
+
+      setConversations(updated);
+
+      setContextMenu(null);
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
+
+  const markUnread = async (
+    contactId
+  ) => {
+
+    try {
+
+      await fetch(
+        `http://localhost:5000/messages/unread/${contactId}`,
+        {
+          method: "POST"
+        }
+      );
+
+      const updated =
+        await getConversations();
+
+      setConversations(updated);
+
+      setContextMenu(null);
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
+
+
+  const deleteMessage = async (
+    messageId
+  ) => {
+
+    try {
+
+      await fetch(
+        `http://localhost:5000/chats/message/${messageId}`,
+        {
+          method: "DELETE"
+        }
+      );
+
+      await loadMessages(
+        selectedConversation.contactId
+      );
+
+      setMessageMenu(null);
+
+    } catch (err) {
+
+      console.error(err);
+
+    }
+
+  };
   const deleteChat = async (contactId) => {
     try {
 
@@ -282,11 +367,41 @@ const togglePin = async (
         Inbox
       </h2>
 
-      <div className="h-[700px] bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex">
+      <div
+        className={`
+          h-[700px]
+          transition-all
+          duration-300
+          rounded-2xl
+          overflow-hidden
+          shadow-sm
+          flex
+          border
+          ${
+            darkMode
+              ? "bg-[#202c33] border-[#2a3942]"
+              : "bg-white border-slate-200"
+          }
+        `}
+      >
 
         {/* Left Panel */}
 
-        <div className="w-[32%] border-r border-slate-200 flex flex-col bg-white">
+        <div
+          className={`
+            w-[32%]
+            transition-all
+            duration-300
+            flex
+            flex-col
+            border-r
+            ${
+              darkMode
+                ? "bg-[#111b21] border-[#2a3942]"
+                : "bg-white border-slate-200"
+            }
+          `}
+        >
     
         <div className="p-4 border-b border-slate-200">
           <div className="relative">
@@ -301,16 +416,20 @@ const togglePin = async (
                 setSearchTerm(e.target.value)
               }
               placeholder="Search chats..."
-              className="
+              className={`
                 w-full
                 pl-9
                 pr-4
                 py-2.5
                 rounded-xl
-                bg-slate-100
                 outline-none
                 text-sm
-              "
+                ${
+                  darkMode
+                    ? "bg-[#202c33] text-white placeholder:text-slate-400"
+                    : "bg-slate-100 text-slate-800"
+                }
+              `}
             />
           </div>
         </div>
@@ -358,8 +477,16 @@ const togglePin = async (
               transition-all
               ${
                 selectedConversation?.contactId === conv.contactId
-                  ? "bg-[#e7f4f0]"
-                  : "hover:bg-slate-50"
+                  ? (
+                      darkMode
+                        ? "bg-[#202c33]"
+                        : "bg-[#e7f4f0]"
+                    )
+                  : (
+                      darkMode
+                        ? "hover:bg-[#202c33]"
+                        : "hover:bg-slate-50"
+                    )
               }
             `}
           >
@@ -381,13 +508,24 @@ const togglePin = async (
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start justify-between w-full">
   
-                    <div className="font-semibold text-slate-800">
+                    <div
+                      className={`
+                        font-semibold
+                        ${
+                          darkMode
+                            ? "text-white"
+                            : "text-slate-800"
+                        }
+                      `}
+                    >
                       <div className="flex items-center gap-2">
 
                         {conv.pinned && (
-                          <span>
-                            📌
-                          </span>
+                          <span>📌</span>
+                        )}
+
+                        {conv.favorite && (
+                          <span>⭐</span>
                         )}
 
                         <span>
@@ -428,7 +566,18 @@ const togglePin = async (
                   )}
                 </div>
 
-                <div className="text-sm text-slate-500 truncate mt-1">
+                <div
+                  className={`
+                    text-sm
+                    truncate
+                    mt-1
+                    ${
+                      darkMode
+                        ? "text-slate-400"
+                        : "text-slate-500"
+                    }
+                  `}
+                >
                   {conv.lastMessage}
                 </div>
               </div>
@@ -442,7 +591,18 @@ const togglePin = async (
 
         {/* Right Panel */}
 
-        <div className="flex-1 flex flex-col bg-[#efeae2]">
+        <div
+          className={`
+            flex-1
+            flex
+            flex-col
+            ${
+              darkMode
+                ? "bg-[#0b141a]"
+                : "bg-[#efeae2]"
+            }
+          `}
+        >
 
           {!selectedConversation ? (
 
@@ -462,7 +622,7 @@ const togglePin = async (
 
             <>
               <div className="bg-[#008069] text-white px-5 py-3 flex items-center gap-3 shadow-sm">
-                <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center font-semibold">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-semibold">
                   {selectedConversation.contactName?.charAt(0)}
                 </div>
 
@@ -505,7 +665,7 @@ const togglePin = async (
 
                   return (
                     <React.Fragment key={msg.id}>
-
+                      
                       {showDateSeparator && (
 
                         <div className="flex justify-center my-4">
@@ -530,6 +690,17 @@ const togglePin = async (
 
                       <div
                         key={msg.id}
+                        onContextMenu={(e) => {
+
+                          e.preventDefault();
+
+                          setMessageMenu({
+                            x: e.pageX,
+                            y: e.pageY,
+                            message: msg
+                          });
+
+                        }}
                         className={`flex ${
                           msg.direction === "outgoing"
                             ? "justify-end"
@@ -550,8 +721,16 @@ const togglePin = async (
                             gap-2
                             ${
                               msg.direction === "outgoing"
-                                ? "bg-[#d9fdd3] rounded-tr-none"
-                                : "bg-white rounded-tl-none"
+                                ? (
+                                    darkMode
+                                      ? "bg-[#005c4b] text-white rounded-tr-none"
+                                      : "bg-[#d9fdd3] rounded-tr-none"
+                                  )
+                                : (
+                                    darkMode
+                                      ? "bg-[#202c33] text-white rounded-tl-none"
+                                      : "bg-white rounded-tl-none"
+                                  )
                             }
                           `}
                         >
@@ -585,7 +764,19 @@ const togglePin = async (
                 })}
                 <div ref={messagesEndRef}></div>
               </div>
-              <div className="bg-[#f0f2f5] p-3 border-t flex gap-3">
+              <div
+                className={`
+                  p-3
+                  border-t
+                  flex
+                  gap-3
+                  ${
+                    darkMode
+                      ? "bg-[#202c33] border-[#2a3942]"
+                      : "bg-[#f0f2f5]"
+                  }
+                `}
+              >
 
                   <input
                     value={replyText}
@@ -593,13 +784,18 @@ const togglePin = async (
                       setReplyText(e.target.value)
                     }
                     placeholder="Type a message..."
-                    className="
+                    className={`
                       flex-1
                       border
                       rounded-xl
                       px-4
                       py-2
-                    "
+                      ${
+                        darkMode
+                          ? "bg-[#2a3942] border-[#3b4a54] text-white placeholder:text-slate-400"
+                          : ""
+                      }
+                    `}
                   />
 
                   <button
@@ -630,17 +826,20 @@ const togglePin = async (
       {contextMenu && (
 
     <div
-      className="
-        fixed
-        z-50
-        bg-white
-        border
-        border-slate-200
-        rounded-xl
-        shadow-xl
-        py-2
-        min-w-[220px]
-      "
+      className={`
+      fixed
+      z-50
+      border
+      rounded-xl
+      shadow-xl
+      py-2
+      min-w-[220px]
+      ${
+        darkMode
+          ? "bg-[#202c33] border-[#2a3942] text-white"
+          : "bg-white border-slate-200"
+      }
+    `}
       style={{
         left: contextMenu.x,
         top: contextMenu.y
@@ -653,22 +852,77 @@ const togglePin = async (
             contextMenu.conversation.contactId
           )
         }
-        className="
+        className={`
           w-full
           text-left
           px-4
           py-2
-          hover:bg-slate-100
-        "
+          ${
+            contextMenu.conversation.pinned
+              ? (
+                  darkMode
+                    ? "hover:bg-orange-900/30 text-orange-400"
+                    : "hover:bg-orange-50 text-orange-600"
+                )
+              : (
+                  darkMode
+                    ? "hover:bg-[#2a3942]"
+                    : "hover:bg-slate-100"
+                )
+          }
+        `}
       >
-        📌 Pin Chat
+        {
+          contextMenu.conversation.pinned
+            ? "📍 Unpin Chat"
+            : "📌 Pin Chat"
+        }
       </button>
 
-      <button className="w-full text-left px-4 py-2 hover:bg-slate-100">
-        ⭐ Favorite
+      <button
+        onClick={() =>
+          toggleFavorite(
+            contextMenu.conversation.contactId
+          )
+        }
+        className={`
+          w-full
+          text-left
+          px-4
+          py-2
+          ${
+            darkMode
+              ? "hover:bg-yellow-900/30 text-yellow-300"
+              : "hover:bg-yellow-50"
+          }
+        `}
+      >
+        {
+          contextMenu.conversation
+            .favorite
+            ? "⭐ Remove Favorite"
+            : "⭐ Favorite"
+        }
       </button>
 
-      <button className="w-full text-left px-4 py-2 hover:bg-slate-100">
+      <button
+        onClick={() =>
+          markUnread(
+            contextMenu.conversation.contactId
+          )
+        }
+        className={`
+          w-full
+          text-left
+          px-4
+          py-2
+          ${
+            darkMode
+              ? "hover:bg-[#2a3942]"
+              : "hover:bg-slate-100"
+          }
+        `}
+      >
         👁 Mark Unread
       </button>
 
@@ -682,14 +936,17 @@ const togglePin = async (
           setContextMenu(null);
 
         }}
-        className="
+        className={`
           w-full
           text-left
           px-4
           py-2
-          hover:bg-red-50
-          text-red-600
-        "
+          ${
+            darkMode
+              ? "hover:bg-red-900/30 text-red-400"
+              : "hover:bg-red-50 text-red-600"
+          }
+        `}
       >
         🗑 Delete Chat
       </button>
@@ -697,17 +954,110 @@ const togglePin = async (
     </div>
 
   )}
+      {messageMenu && (
+
+      <div
+        className={`
+        fixed
+        z-50
+        border
+        rounded-xl
+        shadow-xl
+        py-2
+        min-w-[220px]
+        ${
+          darkMode
+            ? "bg-[#202c33] border-[#2a3942] text-white"
+            : "bg-white border-slate-200"
+        }
+      `}
+        style={{
+          left: messageMenu.x,
+          top: messageMenu.y
+        }}
+      >
+
+        <button
+          onClick={() => {
+
+            navigator.clipboard.writeText(
+              messageMenu.message.message
+            );
+
+            setMessageMenu(null);
+
+          }}
+          className={`
+            w-full
+            text-left
+            px-4
+            py-2
+            ${
+              darkMode
+                ? "hover:bg-[#2a3942]"
+                : "hover:bg-slate-100"
+            }
+          `}
+        >
+          📋 Copy Message
+        </button>
+
+        <button
+          onClick={() =>
+            deleteMessage(
+              messageMenu.message.id
+            )
+          }
+          className={`
+            w-full
+            text-left
+            px-4
+            py-2
+            ${
+              darkMode
+                ? "hover:bg-red-900/30 text-red-400"
+                : "hover:bg-red-50 text-red-600"
+            }
+          `}
+        >
+          🗑 Delete Message
+        </button>
+
+      </div>
+
+    )}
   {deleteConfirm && (
 
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]">
 
-      <div className="bg-white rounded-2xl p-6 w-[400px] shadow-xl">
+      <div
+        className={`
+          rounded-2xl
+          p-6
+          w-[400px]
+          shadow-xl
+          ${
+            darkMode
+              ? "bg-[#111b21] text-white"
+              : "bg-white"
+          }
+        `}
+      >
 
         <h3 className="text-lg font-semibold">
           Delete Chat
         </h3>
 
-        <p className="text-slate-500 mt-2">
+        <p
+          className={`
+            mt-2
+            ${
+              darkMode
+                ? "text-slate-400"
+                : "text-slate-500"
+            }
+          `}
+        >
           Delete conversation with
           <span className="font-medium">
             {" "}
@@ -722,7 +1072,17 @@ const togglePin = async (
             onClick={() =>
               setDeleteConfirm(null)
             }
-            className="px-4 py-2 rounded-xl border"
+            className={`
+              px-4
+              py-2
+              rounded-xl
+              border
+              ${
+                darkMode
+                  ? "border-[#3b4a54] bg-[#202c33] text-white hover:bg-[#2a3942]"
+                  : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              }
+            `}
           >
             Cancel
           </button>

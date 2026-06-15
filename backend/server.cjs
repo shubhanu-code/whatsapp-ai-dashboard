@@ -702,6 +702,39 @@ app.post(
 
   }
 );
+app.post(
+  "/messages/unread/:contactId",
+  (req, res) => {
+
+    const chats = getChats();
+
+    const updated = chats.map(chat => {
+
+      if (
+        chat.contactId ===
+        req.params.contactId
+      ) {
+
+        return {
+          ...chat,
+          read: false
+        };
+
+      }
+
+      return chat;
+
+    });
+
+    saveChats(updated);
+
+    res.json({
+      success: true
+    });
+
+  }
+);
+
 app.listen(5000, () => {
   console.log('Server running on port 5000');
 });

@@ -16,7 +16,8 @@
     "message": "Hey can anybody send me the pic of gym in iiit dwd??",
     "direction": "incoming",
     "timestamp": "2026-06-14T14:59:23.741Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449244611",
@@ -25,7 +26,8 @@
     "message": "6 dumbell 2 treadmill",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:00:44.611Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449322514",
@@ -34,7 +36,8 @@
     "message": "What is 6 dumbell bruh ?",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:02:02.514Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449323406",
@@ -43,7 +46,8 @@
     "message": "",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:02:03.406Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449354922",
@@ -52,7 +56,8 @@
     "message": "How much lat pulldown machine, smith machine etc.. u should tell this",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:02:34.922Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449357515",
@@ -61,7 +66,8 @@
     "message": "",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:02:37.515Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449383864",
@@ -70,7 +76,8 @@
     "message": "Can u send me pic 😅",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:03:03.864Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449383990",
@@ -79,7 +86,8 @@
     "message": "Aagaye david laid college me 🫩",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:03:03.990Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449384626",
@@ -88,7 +96,8 @@
     "message": "",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:03:04.626Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449397579",
@@ -97,7 +106,8 @@
     "message": "😈😈",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:03:17.579Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449419138",
@@ -106,7 +116,8 @@
     "message": "",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:03:39.138Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449425489",
@@ -115,7 +126,8 @@
     "message": "Well it is not that big but good enough it has all machines, I saw it in a video I don't have pics rn",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:03:45.489Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449435262",
@@ -124,7 +136,8 @@
     "message": "Cbum 😈😈🗿",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:03:55.262Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449449280",
@@ -133,7 +146,8 @@
     "message": "",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:04:09.280Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449460649",
@@ -142,7 +156,8 @@
     "message": "What about Tommorow?",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:04:20.649Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449555999",
@@ -151,7 +166,8 @@
     "message": "",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:05:55.999Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781449560807",
@@ -160,7 +176,8 @@
     "message": "Aayen",
     "direction": "incoming",
     "timestamp": "2026-06-14T15:06:00.807Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781460236347",
@@ -209,7 +226,8 @@
     "message": "There's classrooms with such tables and also without em...\n\nDepends on wut kind of sub",
     "direction": "incoming",
     "timestamp": "2026-06-14T18:48:23.183Z",
-    "read": true
+    "read": true,
+    "favorite": false
   },
   {
     "id": "1781464323816",
@@ -339,5 +357,342 @@
     "direction": "outgoing",
     "timestamp": "2026-06-15T02:12:20.630Z",
     "read": true
+  },
+  {
+    "id": "1781534162999",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Can you tell me those because I got 48k and 7k ews but still I'm confused whether to confirm cse dwd in csab",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:02.999Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534163052",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "https://youtu.be/M70dZ8ZhYDY?si=Sl9wyc19BhLSYhGz\n\nYou may comment here to let me know!",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.052Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534163194",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "https://josaa.admissions.nic.in/applicant/seatmatrix/openingclosingrankarchieve.aspx\n\n\nHave you checked the cut off of every college",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.194Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534163304",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "may be in csab you may have chance",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.304Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534163341",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Yes bro I'm getting bhubaneshwar also so should I consider that or this one",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.341Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534163563",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Hello seniors ?\nYe student ka khudka name se bana hua income certificate manga jata h na ?\nScholarship ya kahi need hua to.",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.563Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534163731",
+    "contactId": "status@broadcast",
+    "contactName": "Tishyarakshit",
+    "message": "Happy Marriage anniversary...! Mummy Pappa 💝🧿",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.731Z",
+    "read": true
+  },
+  {
+    "id": "1781534163845",
+    "contactId": "120363418768605188@g.us",
+    "contactName": "Aarya A Sajjan",
+    "message": "Is there anyone in college now ?",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.845Z",
+    "read": true
+  },
+  {
+    "id": "1781534163902",
+    "contactId": "120363418768605188@g.us",
+    "contactName": "Aarya A Sajjan",
+    "message": "https://forms.gle/n6h4WnYzdaCzWCuN7",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.902Z",
+    "read": true
+  },
+  {
+    "id": "1781534163966",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "https://forms.gle/n6h4WnYzdaCzWCuN7",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.966Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534163989",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Jr's\nPlz look into it \nAnd fill the form",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:03.989Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164142",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "no ofc , your father is the one who is earning so his income certificate will be needed",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.142Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164164",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Konse yr se h aap ? \nNsp mila h kya ?",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.164Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164195",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "2nd year",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.195Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164229",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Nsp mila ?",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.229Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164253",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "yes mila hai",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.253Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164269",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Usme kiska income certificate diye the aap ?",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.269Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164379",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Hostels ? Rooms",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.379Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164393",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "father ka",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.393Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164412",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Okh.",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.412Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164426",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Ye wahi se banwaye na jaha ka permanent address h ?",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.426Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534164450",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "yupp",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:04.450Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534165237",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Bro dwd is far better",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:05.237Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534165371",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "To all juniors, a fresh reference doc has been attached for you all and it will resolve most of your queries.\nPlease go through it once before pinging admins\n\nI will be adding more info about gym and all in some time.",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:05.371Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534165522",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:05.522Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534165541",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "It's not getting loaded",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:05.541Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534165631",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Is it ? Lemme check",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:05.631Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534165717",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:05.717Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534165820",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "doc is opening 👍",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:05.820Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534165964",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:05.964Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534168285",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "..",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:08.285Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534168519",
+    "contactId": "120363403323717843@g.us",
+    "contactName": "Satyam",
+    "message": "https://www.instagram.com/reel/DZkBveeNFg0/?igsh=MXQ3cGd5OGY5dm51cw==",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:08.519Z",
+    "read": true,
+    "pinned": false
+  },
+  {
+    "id": "1781534190176",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "Can I get iiit dharwad with crl 58000 and ews rank 8600",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:36:30.176Z",
+    "read": true,
+    "favorite": false
+  },
+  {
+    "id": "1781534247246",
+    "contactId": "120363425028047601@g.us",
+    "contactName": "Rohit Chandra",
+    "message": "",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T14:37:27.246Z",
+    "read": true,
+    "favorite": false
   }
 ]

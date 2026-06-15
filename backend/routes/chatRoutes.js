@@ -4,7 +4,7 @@ const router = express.Router();
 const {
   getChats,
   addMessage,
-  savechats
+  saveChats
 } = require("../services/chatService");
 
 router.get("/", (req, res) => {
@@ -33,6 +33,8 @@ router.get("/conversations", (req, res) => {
             ? 1
             : 0,
         pinned: chat.pinned || false,
+        favorite:
+          chat.favorite || false,
       };
 
     } else {
@@ -152,6 +154,61 @@ router.post(
     } = require(
       "../services/chatService"
     );
+
+    saveChats(updated);
+
+    res.json({
+      success: true
+    });
+
+  }
+);
+
+router.post(
+  "/favorite/:contactId",
+  (req, res) => {
+
+    const chats = getChats();
+
+    const updated = chats.map(chat => {
+
+      if (
+        chat.contactId ===
+        req.params.contactId
+      ) {
+
+        return {
+          ...chat,
+          favorite: !chat.favorite
+        };
+
+      }
+
+      return chat;
+
+    });
+
+    saveChats(updated);
+
+    res.json({
+      success: true
+    });
+
+  }
+);
+
+router.delete(
+  "/message/:messageId",
+  (req, res) => {
+
+    const chats = getChats();
+
+    const updated =
+      chats.filter(
+        chat =>
+          chat.id !==
+          req.params.messageId
+      );
 
     saveChats(updated);
 
