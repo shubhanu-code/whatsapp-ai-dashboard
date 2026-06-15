@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef} from "react";
 import {
   Bot,
   Search,
@@ -13,7 +13,10 @@ const Inbox = () => {
   const [selectedConversation,setSelectedConversation] = useState(null);
   const [messages,setMessages] =useState([]);
   const [replyText, setReplyText] = useState("");
+  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [contextMenu, setContextMenu] =useState(null);
   const loadMessages = async (
     contactId
@@ -43,8 +46,27 @@ const Inbox = () => {
       );
 
   }, []);
+  useEffect(() => {
 
+    const container =
+      messagesContainerRef.current;
 
+    if (!container) return;
+
+    const distanceFromBottom =
+      container.scrollHeight -
+      container.scrollTop -
+      container.clientHeight;
+
+    if (distanceFromBottom < 150) {
+
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth"
+      });
+
+    }
+
+  }, [messages]);
 
   const sendReply = async () => {
 
@@ -75,6 +97,34 @@ const Inbox = () => {
     }
 
   };
+const togglePin = async (
+  contactId
+) => {
+
+  try {
+
+    await fetch(
+      `http://localhost:5000/chats/pin/${contactId}`,
+      {
+        method: "POST"
+      }
+    );
+
+    const updated =
+      await getConversations();
+
+    setConversations(updated);
+
+    setContextMenu(null);
+
+  } catch (err) {
+
+    console.error(err);
+
+  }
+
+};
+
   const deleteChat = async (contactId) => {
     try {
 
@@ -111,6 +161,67 @@ const Inbox = () => {
     .catch(console.error);
 
   }, []);
+  useEffect(() => {
+
+    const interval =
+      setInterval(async () => {
+
+        try {
+
+          const updated =
+            await getConversations();
+
+          setConversations(updated);
+
+          if (
+            selectedConversation
+          ) {
+
+            const msgs =
+              await getMessages(
+                selectedConversation.contactId
+              );
+
+            setMessages(msgs);
+
+          }
+
+        } catch (err) {
+
+          console.error(err);
+
+        }
+
+      }, 3000);
+
+    return () =>
+      clearInterval(interval);
+
+  }, [selectedConversation]);
+  const filteredConversations =
+    conversations
+      .filter(conv =>
+        conv.contactName
+          ?.toLowerCase()
+          .includes(
+            searchTerm.toLowerCase()
+          )
+      )
+      .sort((a, b) => {
+
+        if (
+          a.pinned &&
+          !b.pinned
+        ) return -1;
+
+        if (
+          !a.pinned &&
+          b.pinned
+        ) return 1;
+
+        return 0;
+
+      });
   const handleDeleteChat = async (contactId) => {
 
     await deleteChat(contactId);
@@ -128,6 +239,40 @@ const Inbox = () => {
       setMessages([]);
     }
 
+  };
+  const formatDateLabel = (date) => {
+
+    const msgDate =
+      new Date(date);
+
+    const today =
+      new Date();
+
+    const yesterday =
+      new Date();
+
+    yesterday.setDate(
+      yesterday.getDate() - 1
+    );
+
+    const msgDay =
+      msgDate.toDateString();
+
+    if (
+      msgDay ===
+      today.toDateString()
+    ) {
+      return "Today";
+    }
+
+    if (
+      msgDay ===
+      yesterday.toDateString()
+    ) {
+      return "Yesterday";
+    }
+
+    return msgDate.toLocaleDateString();
   };
   return (
     <>
@@ -151,6 +296,10 @@ const Inbox = () => {
             />
 
             <input
+              value={searchTerm}
+              onChange={(e) =>
+                setSearchTerm(e.target.value)
+              }
               placeholder="Search chats..."
               className="
                 w-full
@@ -167,8 +316,7 @@ const Inbox = () => {
         </div>
 
         <div className="overflow-y-auto flex-1">
-
-          {conversations.map(conv => (
+          {filteredConversations.map(conv => (
 
           <div
             key={conv.contactId}
@@ -230,9 +378,34 @@ const Inbox = () => {
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <div className="font-semibold text-slate-800">
-                    {conv.contactName}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between w-full">
+  
+                    <div className="font-semibold text-slate-800">
+                      <div className="flex items-center gap-2">
+
+                        {conv.pinned && (
+                          <span>
+                            📌
+                          </span>
+                        )}
+
+                        <span>
+                          {conv.contactName}
+                        </span>
+
+                      </div>
+                    </div>
+
+                    <div className="text-[11px] text-slate-400 whitespace-nowrap">
+                      {new Date(
+                        conv.timestamp
+                      ).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      })}
+                    </div>
+
                   </div>
 
                   {conv.unreadCount > 0 && (
@@ -305,6 +478,7 @@ const Inbox = () => {
               </div>
 
               <div
+                ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-6 space-y-3"
                 style={{
                   backgroundImage:
@@ -312,38 +486,104 @@ const Inbox = () => {
                 }}
               >
 
-                {messages.map(msg => (
+                {messages.map((msg, index) => {
 
-                  <div
-                    key={msg.id}
-                    className={`flex ${
-                      msg.direction === "outgoing"
-                        ? "justify-end"
-                        : "justify-start"
-                    }`}
-                  >
+                  const currentDate =
+                    formatDateLabel(
+                      msg.timestamp
+                    );
 
-                    <div
-                      className={`
-                        max-w-[65%]
-                        px-4
-                        py-2
-                        rounded-xl
-                        shadow-sm
-                        ${
+                  const previousDate =
+                    index > 0
+                      ? formatDateLabel(
+                          messages[index - 1].timestamp
+                        )
+                      : null;
+
+                  const showDateSeparator =
+                    currentDate !== previousDate;
+
+                  return (
+                    <React.Fragment key={msg.id}>
+
+                      {showDateSeparator && (
+
+                        <div className="flex justify-center my-4">
+
+                          <div
+                            className="
+                              bg-white/80
+                              px-4
+                              py-1
+                              rounded-full
+                              text-xs
+                              text-slate-600
+                              shadow-sm
+                            "
+                          >
+                            {currentDate}
+                          </div>
+
+                        </div>
+
+                      )}
+
+                      <div
+                        key={msg.id}
+                        className={`flex ${
                           msg.direction === "outgoing"
-                            ? "bg-[#d9fdd3] rounded-tr-none"
-                            : "bg-white rounded-tl-none"
-                        }
-                      `}
-                    >
-                      {msg.message}
-                    </div>
+                            ? "justify-end"
+                            : "justify-start"
+                        }`}
+                      >
 
-                  </div>
+                        <div
+                          className={`
+                            max-w-[75%]
+                            px-4
+                            py-2
+                            rounded-2xl
+                            shadow-sm
+                            flex
+                            items-end
+                            justify-between
+                            gap-2
+                            ${
+                              msg.direction === "outgoing"
+                                ? "bg-[#d9fdd3] rounded-tr-none"
+                                : "bg-white rounded-tl-none"
+                            }
+                          `}
+                        >
 
-                ))}
-                
+                          <span className="break-words">
+                            {msg.message}
+                          </span>
+
+                          <span
+                            className="
+                              text-[10px]
+                              text-slate-400
+                              whitespace-nowrap
+                            "
+                          >
+                            {new Date(
+                              msg.timestamp
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                    </React.Fragment>
+                  );
+
+                })}
+                <div ref={messagesEndRef}></div>
               </div>
               <div className="bg-[#f0f2f5] p-3 border-t flex gap-3">
 
@@ -407,7 +647,20 @@ const Inbox = () => {
       }}
     >
 
-      <button className="w-full text-left px-4 py-2 hover:bg-slate-100">
+      <button
+        onClick={() =>
+          togglePin(
+            contextMenu.conversation.contactId
+          )
+        }
+        className="
+          w-full
+          text-left
+          px-4
+          py-2
+          hover:bg-slate-100
+        "
+      >
         📌 Pin Chat
       </button>
 

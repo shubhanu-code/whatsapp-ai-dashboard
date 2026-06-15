@@ -3,7 +3,8 @@ const router = express.Router();
 
 const {
   getChats,
-  addMessage
+  addMessage,
+  savechats
 } = require("../services/chatService");
 
 router.get("/", (req, res) => {
@@ -30,7 +31,8 @@ router.get("/conversations", (req, res) => {
           chat.direction === "incoming" &&
           !chat.read
             ? 1
-            : 0
+            : 0,
+        pinned: chat.pinned || false,
       };
 
     } else {
@@ -118,5 +120,46 @@ router.post("/send", async (req, res) => {
   }
 
 });
+router.post(
+  "/pin/:contactId",
+  (req, res) => {
+    console.log(
+      "PIN ROUTE HIT:",
+      req.params.contactId
+    );
+    const chats = getChats();
+
+    const updated = chats.map(chat => {
+
+      if (
+        chat.contactId ===
+        req.params.contactId
+      ) {
+
+        return {
+          ...chat,
+          pinned: !chat.pinned
+        };
+
+      }
+
+      return chat;
+
+    });
+
+    const {
+      saveChats
+    } = require(
+      "../services/chatService"
+    );
+
+    saveChats(updated);
+
+    res.json({
+      success: true
+    });
+
+  }
+);
 
 module.exports = router;
