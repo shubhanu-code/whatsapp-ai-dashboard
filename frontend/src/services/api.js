@@ -38,3 +38,19 @@ export const sendMessage = async (
 
   return response.json();
 };
+
+export const deleteChat = async (
+  contactId
+) => {
+
+  const response =
+    await fetch(
+      `http://localhost:5000/messages/${contactId}`,
+      {
+        method: "DELETE"
+      }
+    );
+
+  return response.json();
+
+};

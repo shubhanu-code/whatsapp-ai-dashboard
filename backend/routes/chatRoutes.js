@@ -25,7 +25,12 @@ router.get("/conversations", (req, res) => {
           chat.contactName || "Unknown",
         lastMessage: chat.message,
         timestamp: chat.timestamp,
-        messageCount: 1
+        messageCount: 1,
+        unreadCount:
+          chat.direction === "incoming" &&
+          !chat.read
+            ? 1
+            : 0
       };
 
     } else {
@@ -37,6 +42,15 @@ router.get("/conversations", (req, res) => {
         chat.timestamp;
 
       conversations[chat.contactId].messageCount += 1;
+
+      if (
+        chat.direction === "incoming" &&
+        !chat.read
+      ) {
+        conversations[
+          chat.contactId
+        ].unreadCount += 1;
+      }
 
     }
 

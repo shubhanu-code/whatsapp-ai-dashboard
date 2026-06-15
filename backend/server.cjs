@@ -22,6 +22,8 @@ process.on('uncaughtException', err => {
 
 const {
   addMessage,
+  deleteChat,
+  saveChats,
   getChats
 } = require("./services/chatService");
 const chatRoutes = require("./routes/chatRoutes");
@@ -197,6 +199,20 @@ console.log('ALLOWED CONTACTS LOADED:', allowedContacts.length);
 console.log('CONTACTS LOADED:', contacts.length);
 
 // ── Routes ─────────────────────────────────────────────────────────────────
+app.delete(
+  "/messages/:contactId",
+  (req, res) => {
+
+    deleteChat(
+      req.params.contactId
+    );
+
+    res.json({
+      success: true
+    });
+
+  }
+);
 
 app.get('/allowed-contacts', (req, res) => {
   res.json(allowedContacts);
@@ -277,6 +293,7 @@ app.post('/settings', (req, res) => {
 app.get('/rules', (req, res) => {
   res.json(rules);
 });
+
 
 app.post('/rules', (req, res) => {
   rules = req.body;
@@ -653,7 +670,39 @@ client.on('message', async msg => {
     }, 10000);
   }
 })();
+app.post(
+  "/messages/read/:contactId",
+  (req, res) => {
 
+    const chats = getChats();
+
+    const updated = chats.map(chat => {
+
+      if (
+        chat.contactId ===
+        req.params.contactId
+      ) {
+
+        return {
+          ...chat,
+          read: true
+        };
+
+      }
+
+      return chat;
+
+    });
+
+    saveChats(updated);
+
+    res.json({
+      success: true
+    });
+
+  }
+);
 app.listen(5000, () => {
   console.log('Server running on port 5000');
 });
+

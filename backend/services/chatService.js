@@ -25,15 +25,33 @@ function saveChats(chats) {
   );
 }
 
-function addMessage(message) {
-  const chats = getChats();
 
-  chats.push(message);
+function addMessage(message) {
+
+  chats = getChats();
+
+  chats.push({
+    ...message,
+    read: message.read ?? false
+  });
 
   saveChats(chats);
+
+}
+
+function deleteChat(contactId) {
+  const chats = getChats();
+
+  const filtered = chats.filter(
+    chat => chat.contactId !== contactId
+  );
+
+  saveChats(filtered);
 }
 
 module.exports = {
   getChats,
-  addMessage
+  addMessage,
+  deleteChat,
+  saveChats
 };
