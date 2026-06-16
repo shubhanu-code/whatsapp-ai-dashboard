@@ -12,12 +12,26 @@ export default function Overview({
     contacts,
     stats,
     replyMode,
-    setReplyMode
+    setReplyMode,
+    darkMode
 }) {
     return (
     
         <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
-            <h2 className="text-xl font-bold text-slate-800 tracking-tight pb-2">Dashboard Overview</h2>
+            <h1
+                className={`
+                    text-3xl
+                    font-bold
+                    mb-8
+                    ${
+                    darkMode
+                        ? "text-white"
+                        : "text-slate-800"
+                    }
+                `}
+                >
+                Dashboard Overview
+                </h1>
             
             {/* WhatsApp AI Banner Component */}
             <div className="bg-gradient-to-r from-emerald-600 to-[#075e54] text-white p-7 rounded-2xl relative overflow-hidden shadow-sm">
@@ -41,45 +55,194 @@ export default function Overview({
 
             {/* Grid Cards Container */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="bg-[#f8f9fa] p-5 rounded-xl border border-slate-200/40 flex items-center justify-between">
+                <div
+                    className={`
+                        p-5
+                        rounded-xl
+                        border
+                        flex
+                        items-center
+                        justify-between
+                        ${
+                        darkMode
+                            ? "bg-[#111b21] border-[#202c33]"
+                            : "bg-[#f8f9fa] border-slate-200/40"
+                        }
+                    `}
+                    >
                 <div className="space-y-1">
                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Active Rules</p>
-                    <p className="text-3xl font-extrabold text-slate-800">{rules.filter(r => r.isActive).length}</p>
+                    <p
+                        className={`
+                            text-3xl
+                            font-extrabold
+                            ${
+                            darkMode
+                                ? "text-white"
+                                : "text-slate-800"
+                            }
+                        `}
+                        >
+                        {rules.filter(r => r.isActive).length}
+                        </p>
                 </div>
-                <div className="p-3 bg-white text-emerald-600 rounded-xl shadow-sm border border-slate-100">
+                <div
+                    className={`
+                        p-3
+                        rounded-xl
+                        border
+                        ${
+                        darkMode
+                            ? "bg-[#202c33] border-[#2a3942] text-emerald-400"
+                            : "bg-white border-slate-100 text-emerald-600"
+                        }
+                    `}
+                    >
                     <SquareCode size={22} />
                 </div>
                 </div>
 
-                <div className="bg-[#f8f9fa] p-5 rounded-xl border border-slate-200/40 flex items-center justify-between">
+                <div
+                    className={`
+                        p-5
+                        rounded-xl
+                        border
+                        flex
+                        items-center
+                        justify-between
+                        ${
+                        darkMode
+                            ? "bg-[#111b21] border-[#202c33]"
+                            : "bg-[#f8f9fa] border-slate-200/40"
+                        }
+                    `}
+                    >
                 <div className="space-y-1">
                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Saved Contacts</p>
-                    <p className="text-3xl font-extrabold text-slate-800">{contacts.length}</p>
+                    <p
+                        className={`
+                            text-3xl
+                            font-extrabold
+                            ${
+                            darkMode
+                                ? "text-white"
+                                : "text-slate-800"
+                            }
+                        `}
+                        >
+                        {contacts.length}
+                        </p>
                 </div>
-                <div className="p-3 bg-white text-emerald-600 rounded-xl shadow-sm border border-slate-100">
+                <div
+                    className={`
+                        p-3
+                        rounded-xl
+                        border
+                        ${
+                        darkMode
+                            ? "bg-[#202c33] border-[#2a3942] text-emerald-400"
+                            : "bg-white border-slate-100 text-emerald-600"
+                        }
+                    `}
+                    >
                     <Users size={22} />
                 </div>
                 </div>
 
-                <div className="bg-[#f8f9fa] p-5 rounded-xl border border-slate-200/40 flex items-center justify-between">
+                <div
+                    className={`
+                        p-5
+                        rounded-xl
+                        border
+                        flex
+                        items-center
+                        justify-between
+                        ${
+                        darkMode
+                            ? "bg-[#111b21] border-[#202c33]"
+                            : "bg-[#f8f9fa] border-slate-200/40"
+                        }
+                    `}
+                    >
                 <div className="space-y-1">
                     <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Bot Replies Sent</p>
-                    <p className="text-3xl font-extrabold text-slate-800">{stats.messagesSent}</p>
+                    <p
+                        className={`
+                            text-3xl
+                            font-extrabold
+                            ${
+                            darkMode
+                                ? "text-white"
+                                : "text-slate-800"
+                            }
+                        `}
+                        >
+                        {stats.messagesSent}
+                        </p>
                 </div>
-                <div className="p-3 bg-white text-emerald-600 rounded-xl shadow-sm border border-slate-100">
+                <div
+                    className={`
+                        p-3
+                        rounded-xl
+                        border
+                        ${
+                        darkMode
+                            ? "bg-[#202c33] border-[#2a3942] text-emerald-400"
+                            : "bg-white border-slate-100 text-emerald-600"
+                        }
+                    `}
+                    >
                     <Bot size={22} />
                 </div>
                 </div>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200/50 shadow-sm p-6">
-                <h3 className="text-[15px] font-bold text-slate-800 tracking-tight mb-5">
+            <div
+                className={`
+                    rounded-2xl
+                    border
+                    shadow-sm
+                    p-6
+                    ${
+                    darkMode
+                        ? "bg-[#111b21] border-[#202c33]"
+                        : "bg-white border-slate-200/50"
+                    }
+                `}
+                >
+                <h3
+                    className={`
+                        text-[15px]
+                        font-bold
+                        tracking-tight
+                        mb-5
+                        ${
+                        darkMode
+                            ? "text-white"
+                            : "text-slate-800"
+                        }
+                    `}
+                    >
                 AI Configuration
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
                 <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    <label
+                        className={`
+                            block
+                            text-xs
+                            font-bold
+                            uppercase
+                            tracking-wider
+                            mb-2
+                            ${
+                            darkMode
+                                ? "text-slate-300"
+                                : "text-slate-500"
+                            }
+                        `}
+                        >
                     Reply Mode
                     </label>
 
@@ -100,7 +263,19 @@ export default function Overview({
                         })
                         });
                     }}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium"
+                    className={`
+                        w-full
+                        px-4
+                        py-3
+                        rounded-xl
+                        border
+                        font-medium
+                        ${
+                            darkMode
+                            ? "bg-[#202c33] border-[#2a3942] text-white"
+                            : "bg-slate-50 border-slate-200 text-slate-700"
+                        }
+                        `}
                     >
                     <option value="rules">Rules Only</option>
                     <option value="ai">AI Only</option>
@@ -111,11 +286,45 @@ export default function Overview({
                 </div>
             </div>
             {/* Quick Start Guide Card Section */}
-            <div className="bg-white rounded-2xl border border-slate-200/50 shadow-sm p-6 space-y-4">
-                <h3 className="text-[15px] font-bold text-slate-800 tracking-tight">
+            <div
+                className={`
+                    rounded-2xl
+                    border
+                    shadow-sm
+                    p-6
+                    space-y-4
+                    ${
+                    darkMode
+                        ? "bg-[#111b21] border-[#202c33]"
+                        : "bg-white border-slate-200/50"
+                    }
+                `}
+                >
+                <h3
+                    className={`
+                        text-[15px]
+                        font-bold
+                        tracking-tight
+                        ${
+                        darkMode
+                            ? "text-white"
+                            : "text-slate-800"
+                        }
+                    `}
+                    >
                 Quick Start Guide
                 </h3>
-                <ul className="space-y-3.5 text-slate-600 text-sm">
+                <ul
+                    className={`
+                        space-y-3.5
+                        text-sm
+                        ${
+                        darkMode
+                            ? "text-slate-300"
+                            : "text-slate-600"
+                        }
+                    `}
+                    >
                 <li className="flex items-start gap-3 leading-relaxed">
                     <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={17} />
                     <span>Add contacts and enable the bot for approved contacts in the <span className="text-emerald-600 font-bold">Contacts</span> tab.</span>

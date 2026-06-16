@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Bot, Send } from 'lucide-react';
 import { API_BASE } from '../services/api';
 
-export default function Simulator({rules,contacts,setStats,replyMode,setReplyMode}) {
+export default function Simulator({rules,contacts,setStats,replyMode,setReplyMode,darkMode}) {
   const [messages, setMessages] = useState([
     { id: 'm1', sender: 'bot', text: 'Simulator ready. Send a message to test your rules.', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   ]);
@@ -133,8 +133,30 @@ export default function Simulator({rules,contacts,setStats,replyMode,setReplyMod
   return (
     <div className="space-y-6 animate-in fade-in duration-300 flex flex-col h-[calc(100vh-8rem)]">
       <div className="flex justify-between items-center border-b border-slate-200 pb-4">
-        <h2 className="text-xl font-bold text-slate-800 tracking-tight">Chat Simulator</h2>
-        <div className="flex items-center gap-3 bg-white p-1.5 px-3 rounded-xl border border-slate-200 shadow-sm">
+        <h1
+          className={`
+            text-3xl
+            font-bold
+            mb-8
+            ${
+              darkMode
+                ? "text-white"
+                : "text-slate-800"
+            }
+          `}
+        >
+          Chat Simulator
+        </h1>
+        <div
+          className={`
+            flex items-center gap-3 p-1.5 px-3 rounded-xl border shadow-sm
+            ${
+              darkMode
+                ? "bg-[#111b21] border-[#202c33]"
+                : "bg-white border-slate-200"
+            }
+          `}
+        >
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Simulate As:</span>
           <select
             value={impersonateId} onChange={(e) => setImpersonateId(e.target.value)}
@@ -146,7 +168,16 @@ export default function Simulator({rules,contacts,setStats,replyMode,setReplyMod
         </div>
       </div>
 
-      <div className="flex-1 bg-[#efeae2] rounded-lg overflow-hidden border border-slate-200/80 shadow-sm flex flex-col relative">
+      <div
+        className={`
+          flex-1 rounded-lg overflow-hidden border shadow-sm flex flex-col relative
+          ${
+            darkMode
+              ? "bg-[#0b141a] border-[#202c33]"
+              : "bg-[#efeae2] border-slate-200/80"
+          }
+        `}
+      >
         <div className="bg-[#008069] text-white px-6 py-3.5 flex items-center justify-between shadow-sm z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center border border-white/10">
@@ -174,15 +205,35 @@ export default function Simulator({rules,contacts,setStats,replyMode,setReplyMod
         </div>
 
         <div
-          className="flex-1 overflow-y-auto p-6 space-y-3.5 bg-opacity-40"
-          style={{ backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundBlendMode: 'overlay' }}
+          className={`
+            flex-1 overflow-y-auto p-6 space-y-3.5
+            ${
+              darkMode
+                ? "bg-[#0b141a]"
+                : ""
+            }
+          `}
+          style={{
+            backgroundImage: darkMode
+              ? "radial-gradient(circle at center, rgba(255,255,255,0.03) 1px, transparent 1px)"
+              : 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
+            backgroundSize: darkMode ? "24px 24px" : "auto"
+          }}
         >
           {messages.map(msg => (
             <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[70%] rounded-xl px-3.5 py-2 shadow-sm relative text-[14.5px] leading-normal ${
                 msg.sender === 'user'
-                  ? 'bg-[#d9fdd3] text-[#111b21] rounded-tr-none'
-                  : 'bg-white text-[#111b21] rounded-tl-none'
+                  ? (
+                      darkMode
+                        ? 'bg-[#005c4b] text-white rounded-tr-none'
+                        : 'bg-[#d9fdd3] text-[#111b21] rounded-tr-none'
+                    )
+                  : (
+                      darkMode
+                        ? 'bg-[#202c33] text-white rounded-tl-none'
+                        : 'bg-white text-[#111b21] rounded-tl-none'
+                    )
               }`}>
                 <p>{msg.text}</p>
                 <span className="text-[10px] text-slate-400 block text-right mt-1 font-mono tracking-tighter">{msg.time}</span>
@@ -192,7 +243,16 @@ export default function Simulator({rules,contacts,setStats,replyMode,setReplyMod
           <div ref={chatEndRef} />
         </div>
 
-        <div className="bg-[#f0f2f5] p-3.5 border-t border-slate-200/60 z-10">
+        <div
+          className={`
+            p-3.5 border-t z-10
+            ${
+              darkMode
+                ? "bg-[#202c33] border-[#2a3942]"
+                : "bg-[#f0f2f5] border-slate-200/60"
+            }
+          `}
+        >
           <form onSubmit={handleSend} className="flex gap-3 items-center">
             <input
               type="text"

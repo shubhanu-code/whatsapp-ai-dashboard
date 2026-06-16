@@ -203,6 +203,7 @@ export default function App() {
 
         </div>
         {activeTab === 'overview' && <Overview
+                                        darkMode={darkMode}
                                         rules={rules}
                                         contacts={contacts}
                                         stats={stats}
@@ -211,6 +212,7 @@ export default function App() {
                                       />}
         {activeTab === 'contacts' && (
           <Contacts
+            darkMode={darkMode}
             contacts={contacts}
             setContacts={setContacts}
             rules={rules}
@@ -230,10 +232,10 @@ export default function App() {
           />
         )}
         {activeTab === 'rules' && (
-          <Rules rules={rules} setRules={setRules} contacts={contacts} />
+          <Rules darkMode={darkMode} rules={rules} setRules={setRules} contacts={contacts} />
         )}
         {activeTab === 'simulator' && (
-          <Simulator rules={rules} contacts={contacts} setStats={setStats} replyMode={replyMode} setReplyMode={setReplyMode} />
+          <Simulator darkMode={darkMode} rules={rules} contacts={contacts} setStats={setStats} replyMode={replyMode} setReplyMode={setReplyMode} />
         )}
         {activeTab === 'inbox' && (
           <Inbox

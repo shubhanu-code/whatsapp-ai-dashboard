@@ -82,6 +82,8 @@ const chatMemory = new Map();
 const fs = require('fs');
 const path = require("path");
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const cors = require('cors');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
@@ -142,6 +144,33 @@ async function generateAIReplyWithMemory(history, contactInfo) {
 }
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"]
+  }
+});
+
+global.io = io;
+
+io.on("connection", socket => {
+
+  console.log(
+    "Socket connected:",
+    socket.id
+  );
+
+  socket.on("disconnect", () => {
+
+    console.log(
+      "Socket disconnected:",
+      socket.id
+    );
+
+  });
+
+});
 
 // Ensure data directories exist before trying to read/write files
 if (!fs.existsSync(DATA_DIR)) {
@@ -500,6 +529,13 @@ client.on('message', async msg => {
     timestamp: new Date().toISOString()
   });
 
+  global.io.emit(
+    "new_message",
+    {
+      contactId: sender
+    }
+  );
+
   const exists = contacts.some(
     c => c.whatsappId === sender
   );
@@ -562,6 +598,9 @@ client.on('message', async msg => {
         direction: "outgoing",
         timestamp: new Date().toISOString()
       });
+      global.io.emit(
+        "new_message"
+      );
     }
 
     return;
@@ -595,6 +634,9 @@ client.on('message', async msg => {
         direction: "outgoing",
         timestamp: new Date().toISOString()
       });
+      global.io.emit(
+        "new_message"
+      );
     } catch (err) {
       console.error("AI REPLY ERROR:", err);
 
@@ -616,6 +658,9 @@ client.on('message', async msg => {
         direction: "outgoing",
         timestamp: new Date().toISOString()
       });
+      global.io.emit(
+        "new_message"
+      );
 
       return;
     }
@@ -644,6 +689,9 @@ client.on('message', async msg => {
         direction: "outgoing",
         timestamp: new Date().toISOString()
       });
+      global.io.emit(
+        "new_message"
+      );
     } catch (err) {
       console.error("AI REPLY ERROR:", err);
     }
@@ -735,7 +783,11 @@ app.post(
   }
 );
 
-app.listen(5000, () => {
-  console.log('Server running on port 5000');
+server.listen(5000, () => {
+
+  console.log(
+    'Server running on port 5000'
+  );
+
 });
 

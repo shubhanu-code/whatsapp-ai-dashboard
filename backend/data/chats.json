@@ -1,15 +1,5 @@
 [
   {
-    "id": "1781449045168",
-    "contactId": "184425929281589@lid",
-    "contactName": "Shubhanu pms",
-    "message": "Testing inbox",
-    "direction": "incoming",
-    "timestamp": "2026-06-14T14:57:25.168Z",
-    "read": true,
-    "pinned": false
-  },
-  {
     "id": "1781449163741",
     "contactId": "120363425028047601@g.us",
     "contactName": "Jatin",
@@ -180,46 +170,6 @@
     "favorite": false
   },
   {
-    "id": "1781460236347",
-    "contactId": "184425929281589@lid",
-    "contactName": "184425929281589@lid",
-    "message": "Hii this a testing from dashboard",
-    "direction": "outgoing",
-    "timestamp": "2026-06-14T18:03:56.347Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781460252171",
-    "contactId": "184425929281589@lid",
-    "contactName": "184425929281589@lid",
-    "message": "yes",
-    "direction": "outgoing",
-    "timestamp": "2026-06-14T18:04:12.171Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781460327077",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "Okay",
-    "direction": "incoming",
-    "timestamp": "2026-06-14T18:05:27.077Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781460367637",
-    "contactId": "184425929281589@lid",
-    "contactName": "184425929281589@lid",
-    "message": "hello",
-    "direction": "outgoing",
-    "timestamp": "2026-06-14T18:06:07.638Z",
-    "read": true,
-    "pinned": false
-  },
-  {
     "id": "1781462903183",
     "contactId": "120363425028047601@g.us",
     "contactName": "Jatin",
@@ -228,135 +178,6 @@
     "timestamp": "2026-06-14T18:48:23.183Z",
     "read": true,
     "favorite": false
-  },
-  {
-    "id": "1781464323816",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "great",
-    "direction": "incoming",
-    "timestamp": "2026-06-14T19:12:03.816Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781464353158",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "great",
-    "direction": "incoming",
-    "timestamp": "2026-06-14T19:12:33.158Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781464353641",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "Yes its working",
-    "direction": "outgoing",
-    "timestamp": "2026-06-14T19:12:33.641Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781470818690",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "Hello",
-    "direction": "incoming",
-    "timestamp": "2026-06-14T21:00:18.690Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781470852323",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "Hi broo",
-    "direction": "incoming",
-    "timestamp": "2026-06-14T21:00:52.323Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781470853173",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "hii bro! how r u?",
-    "direction": "outgoing",
-    "timestamp": "2026-06-14T21:00:53.173Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781471439715",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "Hello",
-    "direction": "incoming",
-    "timestamp": "2026-06-14T21:10:39.715Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781483820124",
-    "contactId": "184425929281589@lid",
-    "contactName": "184425929281589@lid",
-    "message": "hii",
-    "direction": "outgoing",
-    "timestamp": "2026-06-15T00:37:00.124Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781486564633",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "Hii",
-    "direction": "incoming",
-    "timestamp": "2026-06-15T01:22:44.633Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781486576559",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "Wkekd",
-    "direction": "incoming",
-    "timestamp": "2026-06-15T01:22:56.559Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781486577700",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "Wjdjdieje",
-    "direction": "incoming",
-    "timestamp": "2026-06-15T01:22:57.700Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781486578936",
-    "contactId": "184425929281589@lid",
-    "contactName": "shubhanu pms",
-    "message": "Djdhdhej",
-    "direction": "incoming",
-    "timestamp": "2026-06-15T01:22:58.936Z",
-    "read": true,
-    "pinned": false
-  },
-  {
-    "id": "1781489540630",
-    "contactId": "184425929281589@lid",
-    "contactName": "184425929281589@lid",
-    "message": "hi",
-    "direction": "outgoing",
-    "timestamp": "2026-06-15T02:12:20.630Z",
-    "read": true
   },
   {
     "id": "1781534162999",
@@ -694,5 +515,25 @@
     "timestamp": "2026-06-15T14:37:27.246Z",
     "read": true,
     "favorite": false
+  },
+  {
+    "id": "1781560176581",
+    "contactId": "184425929281589@lid",
+    "contactName": "shubhanu pms",
+    "message": "Testing again",
+    "direction": "incoming",
+    "timestamp": "2026-06-15T21:49:36.581Z",
+    "read": true,
+    "pinned": false
+  },
+  {
+    "id": "1781568457229",
+    "contactId": "184425929281589@lid",
+    "contactName": "shubhanu pms",
+    "message": "Hello",
+    "direction": "incoming",
+    "timestamp": "2026-06-16T00:07:37.229Z",
+    "read": true,
+    "pinned": false
   }
 ]

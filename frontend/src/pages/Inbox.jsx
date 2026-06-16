@@ -9,6 +9,8 @@ import {
   getMessages,
   sendMessage,
 } from "../services/api";
+import socket from "../services/socket";
+
 const Inbox = ({darkMode}) => {
   const [selectedConversation,setSelectedConversation] = useState(null);
   const [messages,setMessages] =useState([]);
@@ -246,43 +248,42 @@ const Inbox = ({darkMode}) => {
     .catch(console.error);
 
   }, []);
+
   useEffect(() => {
 
-    const interval =
-      setInterval(async () => {
+    socket.on(
+      "new_message",
+      async () => {
 
-        try {
+        const updated =
+          await getConversations();
 
-          const updated =
-            await getConversations();
+        setConversations(updated);
 
-          setConversations(updated);
+        if (
+          selectedConversation
+        ) {
 
-          if (
-            selectedConversation
-          ) {
-
-            const msgs =
-              await getMessages(
-                selectedConversation.contactId
-              );
-
-            setMessages(msgs);
-
-          }
-
-        } catch (err) {
-
-          console.error(err);
+          await loadMessages(
+            selectedConversation.contactId
+          );
 
         }
 
-      }, 3000);
+      }
+    );
 
-    return () =>
-      clearInterval(interval);
+    return () => {
+
+      socket.off(
+        "new_message"
+      );
+
+    };
 
   }, [selectedConversation]);
+
+
   const filteredConversations =
     conversations
       .filter(conv =>
@@ -294,17 +295,15 @@ const Inbox = ({darkMode}) => {
       )
       .sort((a, b) => {
 
-        if (
-          a.pinned &&
-          !b.pinned
-        ) return -1;
+        // Keep pinned chats on top
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
 
-        if (
-          !a.pinned &&
-          b.pinned
-        ) return 1;
-
-        return 0;
+        // Newest message first
+        return (
+          new Date(b.timestamp) -
+          new Date(a.timestamp)
+        );
 
       });
   const handleDeleteChat = async (contactId) => {
@@ -359,13 +358,67 @@ const Inbox = ({darkMode}) => {
 
     return msgDate.toLocaleDateString();
   };
+
+  const formatConversationTime = (date) => {
+
+    const msgDate = new Date(date);
+
+    const today = new Date();
+
+    const yesterday = new Date();
+
+    yesterday.setDate(
+      yesterday.getDate() - 1
+    );
+
+    if (
+      msgDate.toDateString() ===
+      today.toDateString()
+    ) {
+
+      return msgDate.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+
+    }
+
+    if (
+      msgDate.toDateString() ===
+      yesterday.toDateString()
+    ) {
+
+      return "Yesterday";
+
+    }
+
+    return msgDate.toLocaleDateString([], {
+      day: "2-digit",
+      month: "short"
+    });
+
+  };
+
+
+
   return (
     <>
     <div className="space-y-4">
 
-      <h2 className="text-xl font-bold text-slate-800">
+      <h1
+        className={`
+          text-3xl
+          font-bold
+          mb-6
+          ${
+            darkMode
+              ? "text-white"
+              : "text-slate-800"
+          }
+        `}
+      >
         Inbox
-      </h2>
+      </h1>
 
       <div
         className={`
@@ -535,13 +588,21 @@ const Inbox = ({darkMode}) => {
                       </div>
                     </div>
 
-                    <div className="text-[11px] text-slate-400 whitespace-nowrap">
-                      {new Date(
+                    <div
+                      className={`
+                        text-[13px]
+                        font-medium
+                        whitespace-nowrap
+                        ${
+                          darkMode
+                            ? "text-slate-400"
+                            : "text-slate-500"
+                        }
+                      `}
+                    >
+                      {formatConversationTime(
                         conv.timestamp
-                      ).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit"
-                      })}
+                      )}
                     </div>
 
                   </div>
@@ -613,7 +674,7 @@ const Inbox = ({darkMode}) => {
                 WhatsApp Inbox
               </h3>
 
-              <p className="text-sm">
+              <p className="text-[15px]">
                 Select a conversation to view messages
               </p>
             </div>
@@ -621,7 +682,21 @@ const Inbox = ({darkMode}) => {
           ) : (
 
             <>
-              <div className="bg-[#008069] text-white px-5 py-3 flex items-center gap-3 shadow-sm">
+              <div
+                className={`
+                  px-4
+                  py-3
+                  flex
+                  items-center
+                  gap-3
+                  text-white
+                  ${
+                    darkMode
+                      ? "bg-[#202c33]"
+                      : "bg-[#008069]"
+                  }
+                `}
+              >
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-semibold">
                   {selectedConversation.contactName?.charAt(0)}
                 </div>
@@ -631,7 +706,16 @@ const Inbox = ({darkMode}) => {
                     {selectedConversation.contactName}
                   </h3>
 
-                  <p className="text-xs text-emerald-100">
+                  <p
+                    className={`
+                      text-xs
+                      ${
+                        darkMode
+                          ? "text-slate-300"
+                          : "text-emerald-100"
+                      }
+                    `}
+                  >
                     WhatsApp Contact
                   </p>
                 </div>
@@ -641,8 +725,12 @@ const Inbox = ({darkMode}) => {
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-6 space-y-3"
                 style={{
-                  backgroundImage:
-                    'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")'
+                  backgroundColor: darkMode
+                    ? "#0b141a"
+                    : undefined,
+                  backgroundImage: darkMode
+                    ? "none"
+                    : 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")'
                 }}
               >
 
@@ -671,15 +759,18 @@ const Inbox = ({darkMode}) => {
                         <div className="flex justify-center my-4">
 
                           <div
-                            className="
-                              bg-white/80
+                            className={`
                               px-4
                               py-1
                               rounded-full
                               text-xs
-                              text-slate-600
                               shadow-sm
-                            "
+                              ${
+                                darkMode
+                                  ? "bg-[#202c33] text-slate-300"
+                                  : "bg-white/80 text-slate-600"
+                              }
+                            `}
                           >
                             {currentDate}
                           </div>
@@ -740,11 +831,16 @@ const Inbox = ({darkMode}) => {
                           </span>
 
                           <span
-                            className="
-                              text-[10px]
-                              text-slate-400
+                            className={`
+                              text-[12px]
+                              font-medium
                               whitespace-nowrap
-                            "
+                              ${
+                                darkMode
+                                  ? "text-slate-300"
+                                  : "text-slate-500"
+                              }
+                            `}
                           >
                             {new Date(
                               msg.timestamp
