@@ -36,10 +36,6 @@ function getChats() {
     .all();
 }
 
-function saveChats() {
-  // no-op for compatibility
-}
-
 function deleteChat(contactId) {
   db.prepare(`
     DELETE FROM messages
@@ -79,7 +75,6 @@ function deleteMessage(messageId) {
 module.exports = {
   addMessage,
   getChats,
-  saveChats,
   deleteChat,
   markChatRead,
   markChatUnread,

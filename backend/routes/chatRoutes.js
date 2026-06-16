@@ -4,7 +4,6 @@ const router = express.Router();
 const {
   getChats,
   addMessage,
-  saveChats,
   deleteMessage
 } = require("../services/chatServiceSql");
 
@@ -114,15 +113,6 @@ router.post("/send", async (req, res) => {
       contactId,
       message
     );
-
-    addMessage({
-      id: Date.now().toString(),
-      contactId,
-      contactName: contactId,
-      message,
-      direction: "outgoing",
-      timestamp: new Date().toISOString()
-    });
 
     res.json({
       success: true

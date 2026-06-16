@@ -50,7 +50,6 @@ process.on('uncaughtException', err => {
 const {
   addMessage,
   deleteChat,
-  saveChats,
   getChats,
   markChatRead,
   markChatUnread
@@ -606,11 +605,54 @@ client.on('ready', () => {
   console.log(`READY after ${seconds}s`);
 });
 
-client.on('message_create', msg => {
+client.on('message_create', async msg => {
+
   console.log('MESSAGE_CREATE:', msg.body);
   console.log('FROMME:', msg.fromMe);
-});
 
+  if (!msg.fromMe) {
+    return;
+  }
+  const chat = await msg.getChat();
+  
+  const contactName =
+    chat.name ||
+    msg.to;
+
+  const exists =
+    getContactByWhatsappId(msg.to);
+
+  if (!exists) {
+
+    addContact({
+      id: Date.now().toString(),
+      name: contactName,
+      phone: "",
+      whatsappId: msg.to,
+      botEnabled: false,
+      relationship: "Unknown"
+    });
+
+  }
+
+  addMessage({
+    id: Date.now().toString(),
+    contactId: msg.to,
+    contactName,
+    message: msg.body,
+    direction: "outgoing",
+    timestamp: new Date().toISOString(),
+    read: true
+  });
+
+  global.io.emit(
+    "new_message",
+    {
+      contactId: msg.to
+    }
+  );
+
+});
 client.on('message', msg => {
   console.log('MESSAGE EVENT:', msg.body);
 });
@@ -627,8 +669,8 @@ client.on('message', async msg => {
   const text = msg.body.toLowerCase();
   const sender = msg.from;
 
-  const contact = await msg.getContact();
-
+  const contact =
+    await msg.getContact();
   const savedContact =
     getContactByWhatsappId(sender);
 
@@ -726,14 +768,6 @@ client.on('message', async msg => {
     if (matchedRule) {
       await msg.reply(matchedRule.reply);
 
-      addMessage({
-        id: Date.now().toString(),
-        contactId: sender,
-        contactName: contactInfo.name,
-        message: matchedRule.reply,
-        direction: "outgoing",
-        timestamp: new Date().toISOString()
-      });
       global.io.emit(
         "new_message"
       );
@@ -762,14 +796,6 @@ client.on('message', async msg => {
 
       await msg.reply(aiReply);
 
-      addMessage({
-        id: Date.now().toString(),
-        contactId: sender,
-        contactName: contactInfo.name,
-        message: aiReply,
-        direction: "outgoing",
-        timestamp: new Date().toISOString()
-      });
       global.io.emit(
         "new_message"
       );
@@ -786,14 +812,6 @@ client.on('message', async msg => {
     if (matchedRule) {
       await msg.reply(matchedRule.reply);
 
-      addMessage({
-        id: Date.now().toString(),
-        contactId: sender,
-        contactName: contactInfo.name,
-        message: matchedRule.reply,
-        direction: "outgoing",
-        timestamp: new Date().toISOString()
-      });
       global.io.emit(
         "new_message"
       );
@@ -815,16 +833,6 @@ client.on('message', async msg => {
       history.push({ role: "assistant", content: aiReply });
 
       await msg.reply(aiReply);
-
-      // FIX: 'smart' mode AI replies were never logged to chat history before
-      addMessage({
-        id: Date.now().toString(),
-        contactId: sender,
-        contactName: contactInfo.name,
-        message: aiReply,
-        direction: "outgoing",
-        timestamp: new Date().toISOString()
-      });
       global.io.emit(
         "new_message"
       );
@@ -901,6 +909,9 @@ app.get("/analytics", (req, res) => {
     });
 
   }
+
+});
+
 app.get(
   "/analytics/top-contacts",
   (req, res) => {
@@ -923,9 +934,6 @@ app.get(
 
   }
 );
-
-});
-
 
 
 server.listen(5000, () => {
