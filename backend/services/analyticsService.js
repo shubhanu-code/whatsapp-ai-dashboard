@@ -37,6 +37,21 @@ function getAnalytics() {
   };
 }
 
+function getTopContacts() {
+
+  return db.prepare(`
+    SELECT
+      contactName,
+      COUNT(*) as totalMessages
+    FROM messages
+    GROUP BY contactId
+    ORDER BY totalMessages DESC
+    LIMIT 5
+  `).all();
+
+}
+
 module.exports = {
-  getAnalytics
+  getAnalytics,
+  getTopContacts
 };

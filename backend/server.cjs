@@ -1,9 +1,25 @@
 require('dotenv').config();
 require("./db/database");
 const {
-  getAnalytics
+  getAnalytics,
+  getTopContacts
 } = require("./services/analyticsService");
 const startTime = Date.now();
+
+const {
+  getRules,
+  saveRules
+} = require("./services/ruleServiceSql");
+
+const {
+  getSettings,
+  saveSettings
+} = require("./services/settingsServiceSql");
+
+const {
+  getAllowedContacts,
+  saveAllowedContacts
+} = require("./services/allowedContactsServiceSql");
 
 // FIX: whatsapp-web.js has a known race where, on LOGOUT, WA Web reloads
 // its page and the library's internal 'framenavigated' listener tries to
@@ -30,6 +46,13 @@ const {
   saveChats,
   getChats
 } = require("./services/chatServiceSql");
+const {
+  getContacts,
+  saveContacts,
+  addContact,
+  getContactByWhatsappId
+} = require("./services/contactServiceSql");
+
 const chatRoutes = require("./routes/chatRoutes");
 
 let isReinitializing = false;
@@ -206,30 +229,26 @@ function safeWriteJSON(filePath, data) {
   fs.renameSync(tmpPath, filePath);
 }
 
-let allowedContacts = safeReadJSON(
-  path.join(DATA_DIR, "allowedContacts.json"),
-  []
-);
 
-let contacts = safeReadJSON(
-  path.join(DATA_DIR, "contacts.json"),
-  []
-);
+  console.log(
+    'SETTINGS LOADED:',
+    getSettings()
+  );
 
-let settings = safeReadJSON(
-  path.join(DATA_DIR, "settings.json"),
-  { replyMode: "smart" }
-);
+  console.log(
+    'RULES LOADED:',
+    getRules().length
+  );
 
-let rules = safeReadJSON(
-  path.join(DATA_DIR, "rules.json"),
-  []
-);
+  console.log(
+    'ALLOWED CONTACTS LOADED:',
+    getAllowedContacts().length
+  );
 
-console.log('SETTINGS LOADED:', settings);
-console.log('RULES LOADED:', rules.length);
-console.log('ALLOWED CONTACTS LOADED:', allowedContacts.length);
-console.log('CONTACTS LOADED:', contacts.length);
+  console.log(
+    'CONTACTS LOADED:',
+    getContacts().length
+  );
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 app.delete(
@@ -248,19 +267,53 @@ app.delete(
 );
 
 app.get('/allowed-contacts', (req, res) => {
-  res.json(allowedContacts);
+
+  try {
+
+    res.json(
+      getAllowedContacts()
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to load allowed contacts"
+    });
+
+  }
+
 });
 
 app.post('/allowed-contacts', (req, res) => {
-  allowedContacts = req.body;
-  safeWriteJSON(
-    path.join(DATA_DIR, "allowedContacts.json"),
-    allowedContacts
-  );
-  console.log('Allowed Contacts Saved:', allowedContacts.length);
-  res.json({ success: true });
-});
 
+  try {
+
+    saveAllowedContacts(req.body);
+
+    allowedContacts = req.body;
+
+    console.log(
+      "Allowed Contacts Saved:",
+      req.body.length
+    );
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to save allowed contacts"
+    });
+
+  }
+
+});
 async function generateGroqReply(message) {
   const completion = await groq.chat.completions.create({
     model: "llama-3.3-70b-versatile",
@@ -293,49 +346,140 @@ app.post('/ai-reply', async (req, res) => {
 });
 
 app.get('/contacts', (req, res) => {
-  res.json(contacts);
+
+  try {
+
+    res.json(
+      getContacts()
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to load contacts"
+    });
+
+  }
+
 });
 
 app.post('/contacts', (req, res) => {
-  contacts = req.body;
 
-  console.log('Contacts Saved:', contacts.length);
+  try {
 
-  safeWriteJSON(
-    path.join(DATA_DIR, "contacts.json"),
-    contacts
-  );
+    saveContacts(req.body);
 
-  res.json({ success: true });
+    contacts = req.body;
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to save contacts"
+    });
+
+  }
+
 });
 
 app.get('/settings', (req, res) => {
-  res.json(settings);
-});
 
-app.post('/settings', (req, res) => {
-  settings = req.body;
-  safeWriteJSON(
-    path.join(DATA_DIR, "settings.json"),
-    settings
-  );
-  console.log('NEW MODE:', settings.replyMode);
-  res.json({ success: true });
+  try {
+
+    res.json(
+      getSettings()
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to load settings"
+    });
+
+  }
+
 });
 
 app.get('/rules', (req, res) => {
-  res.json(rules);
+
+  try {
+
+    res.json(
+      getRules()
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to load rules"
+    });
+
+  }
+
 });
 
+app.post('/settings', (req, res) => {
+
+  try {
+
+    console.log(
+      "SETTINGS RECEIVED:",
+      req.body
+    );
+
+    saveSettings(req.body);
+
+    settings = req.body;
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to save settings"
+    });
+
+  }
+
+});
 
 app.post('/rules', (req, res) => {
-  rules = req.body;
-  safeWriteJSON(
-    path.join(DATA_DIR, "rules.json"),
-    rules
-  );
-  console.log('Rules Saved:', rules.length);
-  res.json({ success: true });
+
+  try {
+
+    saveRules(req.body);
+
+    rules = req.body;
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to save rules"
+    });
+
+  }
+
 });
 
 app.get('/status', (req, res) => {
@@ -540,12 +684,12 @@ client.on('message', async msg => {
     }
   );
 
-  const exists = contacts.some(
-    c => c.whatsappId === sender
-  );
+  const exists =
+    getContactByWhatsappId(sender);
 
   if (!exists) {
-    contacts.push({
+
+    addContact({
       id: Date.now().toString(),
       name: contactInfo.name,
       phone: "",
@@ -554,16 +698,21 @@ client.on('message', async msg => {
       relationship: "Unknown"
     });
 
-    safeWriteJSON(
-      path.join(DATA_DIR, "contacts.json"),
-      contacts
+    console.log(
+      "NEW CONTACT SAVED:",
+      contactInfo.name
     );
 
-    console.log("NEW CONTACT SAVED:", contactInfo.name);
   }
 
   console.log('FROM:', sender);
-  console.log('MODE:', settings.replyMode);
+  const currentSettings =
+    getSettings();
+
+  console.log(
+    'MODE:',
+    currentSettings.replyMode
+  );
   console.log('MESSAGE:', msg.body);
 
   const isAllowed = allowedContacts.some(contactId => {
@@ -590,7 +739,7 @@ client.on('message', async msg => {
     return msgText.includes(keyword);
   });
 
-  if (settings.replyMode === 'rules') {
+  if (currentSettings.replyMode === 'rules') {
     if (matchedRule) {
       await msg.reply(matchedRule.reply);
 
@@ -610,7 +759,7 @@ client.on('message', async msg => {
     return;
   }
 
-  if (settings.replyMode === 'ai') {
+  if (currentSettings.replyMode === 'ai') {
     if (!chatMemory.has(sender)) {
       chatMemory.set(sender, []);
     }
@@ -650,7 +799,7 @@ client.on('message', async msg => {
     return;
   }
 
-  if (settings.replyMode === 'smart') {
+  if (currentSettings.replyMode === 'smart') {
     if (matchedRule) {
       await msg.reply(matchedRule.reply);
 
@@ -805,6 +954,28 @@ app.get("/analytics", (req, res) => {
     });
 
   }
+app.get(
+  "/analytics/top-contacts",
+  (req, res) => {
+
+    try {
+
+      res.json(
+        getTopContacts()
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        error: "Failed to load contacts"
+      });
+
+    }
+
+  }
+);
 
 });
 

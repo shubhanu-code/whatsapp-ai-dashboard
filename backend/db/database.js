@@ -4,6 +4,10 @@ const path = require("path");
 const db = new Database(
   path.join(__dirname, "whatsapp.db")
 );
+console.log(
+  "DATABASE PATH:",
+  path.join(__dirname, "whatsapp.db")
+);
 
 db.pragma("journal_mode = WAL");
 
@@ -39,6 +43,10 @@ CREATE TABLE IF NOT EXISTS rules (
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT
+);
+
+CREATE TABLE IF NOT EXISTS allowed_contacts (
+  whatsappId TEXT PRIMARY KEY
 );
 `);
 
