@@ -48,6 +48,13 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE TABLE IF NOT EXISTS allowed_contacts (
   whatsappId TEXT PRIMARY KEY
 );
+
+CREATE TABLE IF NOT EXISTS conversations (
+  contactId TEXT PRIMARY KEY,
+  pinned INTEGER DEFAULT 0,
+  favorite INTEGER DEFAULT 0
+);
+
 `);
 
 module.exports = db;

@@ -21,6 +21,13 @@ const {
   saveAllowedContacts
 } = require("./services/allowedContactsServiceSql");
 
+const {
+  togglePin,
+  toggleFavorite
+} = require(
+  "./services/conversationServiceSql"
+);
+
 // FIX: whatsapp-web.js has a known race where, on LOGOUT, WA Web reloads
 // its page and the library's internal 'framenavigated' listener tries to
 // re-inject helpers into a frame that destroy() has already detached.
@@ -44,7 +51,9 @@ const {
   addMessage,
   deleteChat,
   saveChats,
-  getChats
+  getChats,
+  markChatRead,
+  markChatUnread
 } = require("./services/chatServiceSql");
 const {
   getContacts,
@@ -269,7 +278,7 @@ app.post('/allowed-contacts', (req, res) => {
   try {
 
     saveAllowedContacts(req.body);
-    
+
     console.log(
       "Allowed Contacts Saved:",
       req.body.length
@@ -849,27 +858,9 @@ app.post(
   "/messages/read/:contactId",
   (req, res) => {
 
-    const chats = getChats();
-
-    const updated = chats.map(chat => {
-
-      if (
-        chat.contactId ===
-        req.params.contactId
-      ) {
-
-        return {
-          ...chat,
-          read: true
-        };
-
-      }
-
-      return chat;
-
-    });
-
-    saveChats(updated);
+    markChatRead(
+      req.params.contactId
+    );
 
     res.json({
       success: true
@@ -881,27 +872,9 @@ app.post(
   "/messages/unread/:contactId",
   (req, res) => {
 
-    const chats = getChats();
-
-    const updated = chats.map(chat => {
-
-      if (
-        chat.contactId ===
-        req.params.contactId
-      ) {
-
-        return {
-          ...chat,
-          read: false
-        };
-
-      }
-
-      return chat;
-
-    });
-
-    saveChats(updated);
+    markChatUnread(
+      req.params.contactId
+    );
 
     res.json({
       success: true

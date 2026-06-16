@@ -47,9 +47,41 @@ function deleteChat(contactId) {
   `).run(contactId);
 }
 
+function markChatRead(contactId) {
+
+  db.prepare(`
+    UPDATE messages
+    SET read = 1
+    WHERE contactId = ?
+  `).run(contactId);
+
+}
+
+function markChatUnread(contactId) {
+
+  db.prepare(`
+    UPDATE messages
+    SET read = 0
+    WHERE contactId = ?
+  `).run(contactId);
+
+}
+
+function deleteMessage(messageId) {
+
+  db.prepare(`
+    DELETE FROM messages
+    WHERE id = ?
+  `).run(messageId);
+
+}
+
 module.exports = {
   addMessage,
   getChats,
   saveChats,
-  deleteChat
+  deleteChat,
+  markChatRead,
+  markChatUnread,
+  deleteMessage
 };

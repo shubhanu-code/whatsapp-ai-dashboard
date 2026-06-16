@@ -4,8 +4,19 @@ const router = express.Router();
 const {
   getChats,
   addMessage,
-  saveChats
+  saveChats,
+  deleteMessage
 } = require("../services/chatServiceSql");
+
+const {
+  togglePin,
+  toggleFavorite,
+  getConversation,
+  getAllConversations
+} = require(
+  "../services/conversationServiceSql"
+);
+
 
 router.get("/", (req, res) => {
   res.json(getChats());
@@ -13,7 +24,8 @@ router.get("/", (req, res) => {
 router.get("/conversations", (req, res) => {
 
   const chats = getChats();
-
+  const conversationMeta =
+    getAllConversations();
   const conversations = {};
 
   chats.forEach(chat => {
@@ -32,9 +44,14 @@ router.get("/conversations", (req, res) => {
           !chat.read
             ? 1
             : 0,
-        pinned: chat.pinned || false,
+        pinned:
+          conversationMeta[
+            chat.contactId
+          ]?.pinned || false,
         favorite:
-          chat.favorite || false,
+          conversationMeta[
+            chat.contactId
+          ]?.favorite || false,
       };
 
     } else {
@@ -122,40 +139,14 @@ router.post("/send", async (req, res) => {
   }
 
 });
+
 router.post(
   "/pin/:contactId",
   (req, res) => {
-    console.log(
-      "PIN ROUTE HIT:",
+
+    togglePin(
       req.params.contactId
     );
-    const chats = getChats();
-
-    const updated = chats.map(chat => {
-
-      if (
-        chat.contactId ===
-        req.params.contactId
-      ) {
-
-        return {
-          ...chat,
-          pinned: !chat.pinned
-        };
-
-      }
-
-      return chat;
-
-    });
-
-    const {
-      saveChats
-    } = require(
-      "../services/chatServiceSql"
-    );
-
-    saveChats(updated);
 
     res.json({
       success: true
@@ -168,27 +159,9 @@ router.post(
   "/favorite/:contactId",
   (req, res) => {
 
-    const chats = getChats();
-
-    const updated = chats.map(chat => {
-
-      if (
-        chat.contactId ===
-        req.params.contactId
-      ) {
-
-        return {
-          ...chat,
-          favorite: !chat.favorite
-        };
-
-      }
-
-      return chat;
-
-    });
-
-    saveChats(updated);
+    toggleFavorite(
+      req.params.contactId
+    );
 
     res.json({
       success: true
@@ -201,16 +174,9 @@ router.delete(
   "/message/:messageId",
   (req, res) => {
 
-    const chats = getChats();
-
-    const updated =
-      chats.filter(
-        chat =>
-          chat.id !==
-          req.params.messageId
-      );
-
-    saveChats(updated);
+    deleteMessage(
+      req.params.messageId
+    );
 
     res.json({
       success: true
