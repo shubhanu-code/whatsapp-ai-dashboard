@@ -57,18 +57,20 @@ export default function App() {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        const [rulesRes, contactsRes, allowedRes, settingsRes] = await Promise.all([
+        const [rulesRes, contactsRes, allowedRes, settingsRes,analyticsRes] = await Promise.all([
           fetch(`${API_BASE}/rules`),
           fetch(`${API_BASE}/contacts`),
           fetch(`${API_BASE}/allowed-contacts`),
-          fetch(`${API_BASE}/settings`)
+          fetch(`${API_BASE}/settings`),
+          fetch(`${API_BASE}/analytics`)
         ]);
 
-        const [savedRules, savedContacts, allowedContacts, savedSettings] = await Promise.all([
+        const [savedRules, savedContacts, allowedContacts, savedSettings, analytics] = await Promise.all([
           rulesRes.json(),
           contactsRes.json(),
           allowedRes.json(),
-          settingsRes.json()
+          settingsRes.json(),
+          analyticsRes.json()
         ]);
 
         if (Array.isArray(savedRules)) {
@@ -88,12 +90,25 @@ export default function App() {
         if (REPLY_MODES.has(savedSettings?.replyMode)) {
           setReplyMode(savedSettings.replyMode);
         }
+        setStats({
+          messagesSent: analytics.messagesSent,
+          messagesReceived: analytics.messagesReceived
+        });
       } catch (err) {
         console.warn("Could not fetch dashboard data from backend:", err);
       }
     };
 
-    loadDashboardData();
+   loadDashboardData();
+
+  const interval = setInterval(
+    loadDashboardData,
+    10000
+  );
+
+  return () =>
+    clearInterval(interval);
+
   }, []);
 
   const navItems = [

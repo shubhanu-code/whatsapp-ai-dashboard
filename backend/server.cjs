@@ -1,4 +1,8 @@
 require('dotenv').config();
+require("./db/database");
+const {
+  getAnalytics
+} = require("./services/analyticsService");
 const startTime = Date.now();
 
 // FIX: whatsapp-web.js has a known race where, on LOGOUT, WA Web reloads
@@ -25,7 +29,7 @@ const {
   deleteChat,
   saveChats,
   getChats
-} = require("./services/chatService");
+} = require("./services/chatServiceSql");
 const chatRoutes = require("./routes/chatRoutes");
 
 let isReinitializing = false;
@@ -782,6 +786,29 @@ app.post(
 
   }
 );
+
+app.get("/analytics", (req, res) => {
+
+  try {
+
+    const analytics =
+      getAnalytics();
+
+    res.json(analytics);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to load analytics"
+    });
+
+  }
+
+});
+
+
 
 server.listen(5000, () => {
 
