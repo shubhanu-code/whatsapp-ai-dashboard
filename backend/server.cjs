@@ -88,7 +88,6 @@ function startStartupWatchdog() {
   }, 20000); // give first-time sync more room than the old 60s
 }
 
-const DATA_DIR = process.env.DATA_DIR || './wa-data';
 const AUTH_DIR = process.env.AUTH_DIR || './wa-auth';
 const BROWSER_PATH = process.env.BROWSER_PATH;
 
@@ -200,9 +199,6 @@ io.on("connection", socket => {
 });
 
 // Ensure data directories exist before trying to read/write files
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
 if (!fs.existsSync(AUTH_DIR)) {
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 }
@@ -211,24 +207,6 @@ if (!fs.existsSync(AUTH_DIR)) {
 app.use(cors({ origin: 'http://localhost:5173' }));
 app.use(express.json());
 app.use("/chats", chatRoutes);
-
-// FIX #8: Safe file reads — server won't crash if JSON files are missing
-function safeReadJSON(filePath, fallback) {
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch (err) {
-    console.warn(`Could not read ${filePath}, using fallback. Error: ${err.message}`);
-    return fallback;
-  }
-}
-
-// FIX #9: Atomic file write — prevents data loss if write is interrupted
-function safeWriteJSON(filePath, data) {
-  const tmpPath = filePath + '.tmp';
-  fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2));
-  fs.renameSync(tmpPath, filePath);
-}
-
 
   console.log(
     'SETTINGS LOADED:',
@@ -291,9 +269,7 @@ app.post('/allowed-contacts', (req, res) => {
   try {
 
     saveAllowedContacts(req.body);
-
-    allowedContacts = req.body;
-
+    
     console.log(
       "Allowed Contacts Saved:",
       req.body.length
@@ -371,8 +347,6 @@ app.post('/contacts', (req, res) => {
 
     saveContacts(req.body);
 
-    contacts = req.body;
-
     res.json({
       success: true
     });
@@ -440,8 +414,6 @@ app.post('/settings', (req, res) => {
 
     saveSettings(req.body);
 
-    settings = req.body;
-
     res.json({
       success: true
     });
@@ -463,8 +435,6 @@ app.post('/rules', (req, res) => {
   try {
 
     saveRules(req.body);
-
-    rules = req.body;
 
     res.json({
       success: true
@@ -650,9 +620,8 @@ client.on('message', async msg => {
 
   const contact = await msg.getContact();
 
-  const savedContact = contacts.find(
-    c => c.whatsappId === sender
-  );
+  const savedContact =
+    getContactByWhatsappId(sender);
 
   const contactInfo = {
     name:
@@ -715,6 +684,9 @@ client.on('message', async msg => {
   );
   console.log('MESSAGE:', msg.body);
 
+  const allowedContacts =
+    getAllowedContacts();
+
   const isAllowed = allowedContacts.some(contactId => {
     const normalize = (id) =>
       id.replace(/@(c\.us|lid|s\.whatsapp\.net)$/, '');
@@ -726,6 +698,8 @@ client.on('message', async msg => {
     console.log('CONTACT NOT ALLOWED:', sender);
     return;
   }
+  const rules =
+    getRules();
 
   const matchedRule = rules.find(r => {
     if (!r.isActive) return false;

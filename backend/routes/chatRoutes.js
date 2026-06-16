@@ -5,7 +5,7 @@ const {
   getChats,
   addMessage,
   saveChats
-} = require("../services/chatService");
+} = require("../services/chatServiceSql");
 
 router.get("/", (req, res) => {
   res.json(getChats());
@@ -152,7 +152,7 @@ router.post(
     const {
       saveChats
     } = require(
-      "../services/chatService"
+      "../services/chatServiceSql"
     );
 
     saveChats(updated);
