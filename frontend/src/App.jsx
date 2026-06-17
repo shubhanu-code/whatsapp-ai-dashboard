@@ -23,6 +23,7 @@ import Simulator from './pages/Simulator';
 import Overview from "./pages/Overview";
 import Toast from "./components/Toast";
 import Sidebar from "./components/Sidebar";
+import Analytics from "./pages/Analytics";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const REPLY_MODES = new Set(['rules', 'ai', 'smart']);
@@ -116,7 +117,8 @@ export default function App() {
     { id: 'contacts', label: 'Contacts', icon: Users },
     { id: 'rules', label: 'Auto-Reply Rules', icon: SquareCode },
     { id: 'simulator', label: 'Chat Simulator', icon: Smartphone },
-    { id: 'inbox', label: 'Inbox', icon: Send }
+    { id: 'inbox', label: 'Inbox', icon: Send },
+    { id: 'analytics',label:'Analytics',icon: LayoutDashboard},
   ];
 
   return (
@@ -254,6 +256,12 @@ export default function App() {
         )}
         {activeTab === 'inbox' && (
           <Inbox
+            darkMode={darkMode}
+          />
+        )}
+
+        {activeTab === 'analytics' && (
+          <Analytics
             darkMode={darkMode}
           />
         )}

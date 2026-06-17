@@ -2,7 +2,10 @@ require('dotenv').config();
 require("./db/database");
 const {
   getAnalytics,
-  getTopContacts
+  getTopContacts,
+  getMessageBreakdown,
+  getPeakHours,
+  getDailyActivity
 } = require("./services/analyticsService");
 const startTime = Date.now();
 
@@ -52,7 +55,8 @@ const {
   deleteChat,
   getChats,
   markChatRead,
-  markChatUnread
+  markChatUnread,
+  messageExists,
 } = require("./services/chatServiceSql");
 const {
   getContacts,
@@ -70,6 +74,34 @@ let whatsappStatus = 'starting';
 let latestQR = null;
 
 let startupWatchdog;
+
+
+async function saveOutgoingReply(
+  sender,
+  contactName,
+  text
+) {
+
+  addMessage({
+    id: `bot_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2)}`,
+    contactId: sender,
+    contactName,
+    message: text,
+    direction: "outgoing",
+    timestamp: new Date().toISOString(),
+    read: true
+  });
+
+  global.io.emit(
+    "new_message",
+    { contactId: sender }
+  );
+
+}
+
+
 
 function startStartupWatchdog() {
   clearTimeout(startupWatchdog);
@@ -587,7 +619,7 @@ client.on('change_state', state => {
   console.log('STATE:', state);
 });
 
-client.on('ready', () => {
+client.on('ready', async () => {
   if (readyFired) {
     return;
   }
@@ -603,6 +635,119 @@ client.on('ready', () => {
 
   console.log('=== READY EVENT FIRED ===');
   console.log(`READY after ${seconds}s`);
+  try {
+
+    const chats =
+      await client.getChats();
+
+    const recentChats =
+      chats
+        .filter(
+          chat =>
+            !chat.isGroup &&
+            chat.lastMessage
+        )
+        .sort(
+          (a, b) =>
+            b.lastMessage.timestamp -
+            a.lastMessage.timestamp
+        )
+        .slice(0, 30);
+
+    console.log(
+      "TOTAL CHATS:",
+      chats.length
+    );
+    console.log(
+      "RECENT CHATS:",
+      recentChats.length
+    );
+    let imported = 0;
+
+    for (const chat of recentChats) {
+
+      if (chat.isGroup) {
+        continue;
+      }
+
+      if (!chat.lastMessage) {
+        continue;
+      }
+      try {
+
+        const messages =
+          await chat.fetchMessages({
+            limit: 20
+          });
+
+        for (const msg of messages) {
+        
+          if (!msg.id?._serialized) {
+            continue;
+          }
+
+          if (
+            messageExists(
+              msg.id._serialized
+            )
+          ) {
+            continue;
+          }
+
+          addMessage({
+            id: msg.id._serialized,
+
+            contactId:
+              chat.id._serialized,
+
+            contactName:
+              chat.name ||
+              "Unknown",
+
+            message:
+              msg.body || "",
+
+            direction:
+              msg.fromMe
+                ? "outgoing"
+                : "incoming",
+
+            timestamp:
+              new Date(
+                msg.timestamp * 1000
+              ).toISOString(),
+
+            read: true
+          });
+
+          imported++;
+
+        }
+
+
+      } catch (err) {
+
+        console.log(
+          "SYNC SKIPPED:",
+          chat.name
+        );
+
+      }
+
+    }
+    console.log(
+      "MESSAGES IMPORTED:",
+      imported
+    );  
+
+  } catch (err) {
+
+    console.error(
+      "SYNC TEST ERROR:",
+      err
+    );
+
+  }
 });
 
 client.on('message_create', async msg => {
@@ -636,12 +781,15 @@ client.on('message_create', async msg => {
   }
 
   addMessage({
-    id: Date.now().toString(),
+    id: msg.id._serialized,
     contactId: msg.to,
     contactName,
     message: msg.body,
     direction: "outgoing",
-    timestamp: new Date().toISOString(),
+    timestamp:
+      new Date(
+        msg.timestamp * 1000
+      ).toISOString(),
     read: true
   });
 
@@ -689,12 +837,15 @@ client.on('message', async msg => {
   };
 
   addMessage({
-    id: Date.now().toString(),
+    id: msg.id._serialized,
     contactId: sender,
     contactName: contactInfo.name,
     message: msg.body,
     direction: "incoming",
-    timestamp: new Date().toISOString()
+    timestamp:
+      new Date(
+        msg.timestamp * 1000
+      ).toISOString()
   });
 
   global.io.emit(
@@ -753,27 +904,53 @@ client.on('message', async msg => {
     getRules();
 
   const matchedRule = rules.find(r => {
-    if (!r.isActive) return false;
 
-    const msgText = text.trim();
-    const keyword = (r.keyword || '').toLowerCase().trim();
+    if (!r.isActive) {
+      return false;
+    }
 
-    if (r.matchType === 'exact') {
+    const contactMatch =
+      r.targetContact === "all" ||
+      r.targetContact === savedContact?.id;
+
+    if (!contactMatch) {
+      return false;
+    }
+
+    const msgText =
+      text.trim();
+
+    const keyword =
+      (r.keyword || "")
+        .toLowerCase()
+        .trim();
+
+    if (r.matchType === "exact") {
       return msgText === keyword;
     }
+
     return msgText.includes(keyword);
+
   });
 
   if (currentSettings.replyMode === 'rules') {
-    if (matchedRule) {
-      await msg.reply(matchedRule.reply);
 
-      global.io.emit(
-        "new_message"
+    if (matchedRule) {
+
+      await msg.reply(
+        matchedRule.reply
       );
+
+      await saveOutgoingReply(
+        sender,
+        contactInfo.name,
+        matchedRule.reply
+      );
+
     }
 
     return;
+
   }
 
   if (currentSettings.replyMode === 'ai') {
@@ -796,8 +973,10 @@ client.on('message', async msg => {
 
       await msg.reply(aiReply);
 
-      global.io.emit(
-        "new_message"
+      await saveOutgoingReply(
+        sender,
+        contactInfo.name,
+        aiReply
       );
     } catch (err) {
       console.error("AI REPLY ERROR:", err);
@@ -812,8 +991,10 @@ client.on('message', async msg => {
     if (matchedRule) {
       await msg.reply(matchedRule.reply);
 
-      global.io.emit(
-        "new_message"
+      await saveOutgoingReply(
+        sender,
+        contactInfo.name,
+        matchedRule.reply
       );
 
       return;
@@ -828,13 +1009,22 @@ client.on('message', async msg => {
     history.push({ role: "user", content: msg.body });
 
     try {
-      const aiReply = await generateAIReplyWithMemory(history, contactInfo);
+      const aiReply = await generateAIReplyWithMemory(
+        history,
+        contactInfo
+      );
 
-      history.push({ role: "assistant", content: aiReply });
+      history.push({
+        role: "assistant",
+        content: aiReply
+      });
 
       await msg.reply(aiReply);
-      global.io.emit(
-        "new_message"
+
+      await saveOutgoingReply(
+        sender,
+        contactInfo.name,
+        aiReply
       );
     } catch (err) {
       console.error("AI REPLY ERROR:", err);
@@ -935,6 +1125,74 @@ app.get(
   }
 );
 
+app.get(
+  "/analytics/breakdown",
+  (req, res) => {
+
+    try {
+
+      res.json(
+        getMessageBreakdown()
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        error: "Failed to load breakdown"
+      });
+
+    }
+
+  }
+);
+
+app.get(
+  "/analytics/peak-hours",
+  (req, res) => {
+
+    try {
+
+      res.json(
+        getPeakHours()
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        error: "Failed to load peak hours"
+      });
+
+    }
+
+  }
+);
+
+app.get(
+  "/analytics/daily-activity",
+  (req, res) => {
+
+    try {
+
+      res.json(
+        getDailyActivity()
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        error: "Failed to load activity"
+      });
+
+    }
+
+  }
+);
 
 server.listen(5000, () => {
 

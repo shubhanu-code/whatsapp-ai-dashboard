@@ -2,7 +2,7 @@ const db = require("../db/database");
 
 function addMessage(message) {
   db.prepare(`
-    INSERT INTO messages (
+    INSERT OR IGNORE INTO messages (
       id,
       contactId,
       contactName,
@@ -72,11 +72,25 @@ function deleteMessage(messageId) {
 
 }
 
+function messageExists(id) {
+
+  const row =
+    db.prepare(`
+      SELECT id
+      FROM messages
+      WHERE id = ?
+    `).get(id);
+
+  return !!row;
+
+}
+
 module.exports = {
   addMessage,
   getChats,
   deleteChat,
   markChatRead,
   markChatUnread,
-  deleteMessage
+  deleteMessage,
+  messageExists
 };

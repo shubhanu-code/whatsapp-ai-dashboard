@@ -51,7 +51,61 @@ function getTopContacts() {
 
 }
 
+function getMessageBreakdown() {
+
+  const incoming =
+    db.prepare(`
+      SELECT COUNT(*) AS count
+      FROM messages
+      WHERE direction='incoming'
+    `).get().count;
+
+  const outgoing =
+    db.prepare(`
+      SELECT COUNT(*) AS count
+      FROM messages
+      WHERE direction='outgoing'
+    `).get().count;
+
+  return {
+    incoming,
+    outgoing
+  };
+
+}
+
+function getPeakHours() {
+
+  return db.prepare(`
+    SELECT
+      strftime('%H', timestamp) AS hour,
+      COUNT(*) AS total
+    FROM messages
+    GROUP BY hour
+    ORDER BY CAST(hour AS INTEGER)
+  `).all();
+
+}
+
+
+function getDailyActivity() {
+
+  return db.prepare(`
+    SELECT
+      date(timestamp) AS day,
+      COUNT(*) AS total
+    FROM messages
+    GROUP BY day
+    ORDER BY day DESC
+    LIMIT 30
+  `).all();
+
+}
+
 module.exports = {
   getAnalytics,
-  getTopContacts
+  getTopContacts,
+  getMessageBreakdown,
+  getPeakHours,
+  getDailyActivity
 };
