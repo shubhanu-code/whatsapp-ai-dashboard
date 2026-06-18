@@ -124,6 +124,7 @@ export default function App() {
   return (
     <div
       className={`
+        ${darkMode ? "dark" : ""}
         min-h-screen
         flex
         flex-col

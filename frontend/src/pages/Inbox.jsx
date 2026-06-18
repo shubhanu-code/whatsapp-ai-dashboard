@@ -2,7 +2,14 @@ import React, { useState, useEffect, useRef} from "react";
 import {
   Bot,
   Search,
-  Send
+  Send,
+  Pin,
+  Star,
+  Image,
+  Video,
+  FileText,
+  Mic,
+  Sticker
 } from "lucide-react";
 import {
   getConversations,
@@ -251,32 +258,35 @@ const Inbox = ({darkMode}) => {
 
   useEffect(() => {
 
-    socket.on(
-      "new_message",
-      async () => {
+    const handler = async () => {
 
-        const updated =
-          await getConversations();
+      const updated =
+        await getConversations();
 
-        setConversations(updated);
+      setConversations(updated);
 
-        if (
-          selectedConversation
-        ) {
+      if (
+        selectedConversation
+      ) {
 
-          await loadMessages(
-            selectedConversation.contactId
-          );
-
-        }
+        await loadMessages(
+          selectedConversation.contactId
+        );
 
       }
+
+    };
+
+    socket.on(
+      "new_message",
+      handler
     );
 
     return () => {
 
       socket.off(
-        "new_message"
+        "new_message",
+        handler
       );
 
     };
@@ -286,13 +296,26 @@ const Inbox = ({darkMode}) => {
 
   const filteredConversations =
     conversations
-      .filter(conv =>
-        conv.contactName
-          ?.toLowerCase()
-          .includes(
-            searchTerm.toLowerCase()
-          )
-      )
+      .filter(conv => {
+
+        const search =
+          searchTerm.toLowerCase();
+
+        return (
+
+          conv.contactName
+            ?.toLowerCase()
+            .includes(search)
+
+          ||
+
+          conv.lastMessage
+            ?.toLowerCase()
+            .includes(search)
+
+        );
+
+      })
       .sort((a, b) => {
 
         // Keep pinned chats on top
@@ -398,8 +421,70 @@ const Inbox = ({darkMode}) => {
     });
 
   };
+  const renderMediaMessage = (message) => {
 
+    switch (message) {
 
+      case "[PHOTO]":
+        return (
+          <div className="flex items-center gap-2 italic">
+            <Image
+              size={16}
+              className="text-emerald-500 shrink-0"
+            />
+            <span>Photo</span>
+          </div>
+        );
+
+      case "[VIDEO]":
+        return (
+          <div className="flex items-center gap-2 italic">
+            <Video
+              size={16}
+              className="text-purple-500 shrink-0"
+            />
+            <span>Video</span>
+          </div>
+        );
+
+      case "[VOICE MESSAGE]":
+        return (
+          <div className="flex items-center gap-2 italic">
+            <Mic
+              size={16}
+              className="text-sky-500 shrink-0"
+            />
+            <span>Voice Message</span>
+          </div>
+        );
+
+      case "[DOCUMENT]":
+        return (
+          <div className="flex items-center gap-2 italic">
+            <FileText
+              size={16}
+              className="text-amber-500 shrink-0"
+            />
+            <span>Document</span>
+          </div>
+        );
+
+      case "[STICKER]":
+        return (
+          <div className="flex items-center gap-2 italic">
+            <Image
+              size={16}
+              className="text-pink-500 shrink-0"
+            />
+            <span>Sticker</span>
+          </div>
+        );
+
+      default:
+        return message;
+    }
+
+  };
 
   return (
     <>
@@ -432,8 +517,8 @@ const Inbox = ({darkMode}) => {
           border
           ${
             darkMode
-              ? "bg-[#202c33] border-[#2a3942]"
-              : "bg-white border-slate-200"
+            ? "bg-[#202c33] border-[#2a3942]"
+            : "bg-white border-slate-100 shadow-sm"
           }
         `}
       >
@@ -451,7 +536,7 @@ const Inbox = ({darkMode}) => {
             ${
               darkMode
                 ? "bg-[#111b21] border-[#2a3942]"
-                : "bg-white border-slate-200"
+                : "bg-white border-slate-100"
             }
           `}
         >
@@ -480,11 +565,25 @@ const Inbox = ({darkMode}) => {
                 ${
                   darkMode
                     ? "bg-[#202c33] text-white placeholder:text-slate-400"
-                    : "bg-slate-100 text-slate-800"
+                    : "bg-slate-50 border border-slate-200 text-slate-800"
                 }
               `}
             />
           </div>
+        </div>
+        <div
+          className={`
+            px-4
+            py-2
+            text-xs
+            ${
+              darkMode
+                ? "text-slate-400"
+                : "text-slate-500"
+            }
+          `}
+        >
+          {filteredConversations.length} chats
         </div>
 
         <div className="overflow-y-auto flex-1">
@@ -503,7 +602,7 @@ const Inbox = ({darkMode}) => {
                 }
               );
 
-              loadMessages(conv.contactId);
+              await loadMessages(conv.contactId);
 
               const updated =
                 await getConversations();
@@ -523,17 +622,28 @@ const Inbox = ({darkMode}) => {
 
             }}
             className={`
-              px-4 py-4
               border-b
-              border-slate-100
+              ${
+                darkMode
+                  ? "border-[#1a252d]"
+                  : "border-slate-100"
+              }
               cursor-pointer
               transition-all
+              duration-200
+              hover:translate-x-1
               ${
                 selectedConversation?.contactId === conv.contactId
                   ? (
                       darkMode
-                        ? "bg-[#202c33]"
-                        : "bg-[#e7f4f0]"
+                        ? `
+                            bg-[#202c33]
+                            shadow-[inset_4px_0_0_#25D366]
+                          `
+                        : `
+                          bg-[#f0fdf4]
+                          shadow-[inset_4px_0_0_#25D366]
+                        `
                     )
                   : (
                       darkMode
@@ -543,22 +653,38 @@ const Inbox = ({darkMode}) => {
               }
             `}
           >
-            <div className="flex gap-3">
+            <div
+              className="
+                flex
+                gap-3
+                px-4
+                py-4
+                min-h-[80px]
+                items-start
+              "
+            >
               <div
-                className="
-                  w-11 h-11
+                className={`
+                  w-11
+                  h-11
                   rounded-full
-                  bg-emerald-100
-                  text-emerald-700
-                  flex items-center justify-center
+                  flex
+                  items-center
+                  justify-center
                   font-bold
-                "
+                  shadow-sm
+                  ${
+                    darkMode
+                      ? "bg-[#d8fdd2] text-[#00684a]"
+                      : "bg-emerald-100 text-emerald-700"
+                  }
+                `}
               >
                 {conv.contactName?.charAt(0)}
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-start justify-between w-full">
   
                     <div
@@ -574,11 +700,19 @@ const Inbox = ({darkMode}) => {
                       <div className="flex items-center gap-2">
 
                         {conv.pinned && (
-                          <span>📌</span>
+                          <Pin
+                            size={14}
+                            className="text-orange-400"
+                            fill="currentColor"
+                          />
                         )}
 
                         {conv.favorite && (
-                          <span>⭐</span>
+                          <Star
+                            size={14}
+                            className="text-yellow-400"
+                            fill="currentColor"
+                          />
                         )}
 
                         <span>
@@ -629,9 +763,9 @@ const Inbox = ({darkMode}) => {
 
                 <div
                   className={`
-                    text-sm
+                    text-[16px]
                     truncate
-                    mt-1
+                    mt-2
                     ${
                       darkMode
                         ? "text-slate-400"
@@ -639,7 +773,18 @@ const Inbox = ({darkMode}) => {
                     }
                   `}
                 >
-                  {conv.lastMessage}
+                  {conv.lastMessage === "[PHOTO]"
+                    ? "📷 Photo"
+                    : conv.lastMessage === "[VIDEO]"
+                    ? "🎥 Video"
+                    : conv.lastMessage === "[VOICE MESSAGE]"
+                    ? "🎵 Voice Message"
+                    : conv.lastMessage === "[DOCUMENT]"
+                    ? "📄 Document"
+                    : conv.lastMessage === "[STICKER]"
+                    ? "😀 Sticker"
+                    : conv.lastMessage
+                  }
                 </div>
               </div>
             </div>
@@ -693,48 +838,99 @@ const Inbox = ({darkMode}) => {
                   ${
                     darkMode
                       ? "bg-[#202c33]"
-                      : "bg-[#008069]"
+                      : "bg-white border-b border-slate-200"
                   }
                 `}
               >
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-semibold">
+                <div
+                  className={`
+                    w-11
+                    h-11
+                    rounded-full
+                    flex
+                    items-center
+                    justify-center
+                    font-bold
+                    shrink-0
+                    ${
+                      darkMode
+                        ? "bg-[#d8fdd2] text-[#00684a]"
+                        : "bg-emerald-100 text-emerald-700"
+                    }
+                  `}
+                >
                   {selectedConversation.contactName?.charAt(0)}
                 </div>
 
                 <div>
-                  <h3 className="font-semibold">
+                  <h3
+                    className={`
+                      font-semibold
+                      ${
+                        darkMode
+                          ? "text-white"
+                          : "text-slate-800"
+                      }
+                    `}
+                  >
                     {selectedConversation.contactName}
                   </h3>
 
-                  <p
+                  <span
                     className={`
+                      inline-block
+                      mt-1
+                      px-2
+                      py-0.5
+                      rounded-full
                       text-xs
+                      font-medium
                       ${
                         darkMode
-                          ? "text-slate-300"
-                          : "text-emerald-100"
+                          ? "bg-[#25D366]/20 text-[#25D366]"
+                          : "bg-emerald-100 text-emerald-700"
                       }
                     `}
                   >
                     WhatsApp Contact
-                  </p>
+                  </span>
                 </div>
               </div>
 
               <div
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto p-6 space-y-3"
+                className="flex-1 overflow-y-auto p-6"
                 style={{
                   backgroundColor: darkMode
                     ? "#0b141a"
                     : undefined,
+
                   backgroundImage: darkMode
-                    ? "none"
-                    : 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")'
+                    ? `
+                      radial-gradient(
+                        circle,
+                        rgba(255,255,255,0.03) 1px,
+                        transparent 1px
+                      )
+                    `
+                    : 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
+
+                  backgroundSize: darkMode
+                    ? "30px 30px"
+                    : "auto"
                 }}
-              >
+                >
 
                 {messages.map((msg, index) => {
+
+                  const previousMsg =
+                    index > 0
+                      ? messages[index - 1]
+                      : null;
+
+                  const sameSender =
+                    previousMsg &&
+                    previousMsg.direction === msg.direction;
 
                   const currentDate =
                     formatDateLabel(
@@ -780,8 +976,7 @@ const Inbox = ({darkMode}) => {
                       )}
 
                       <div
-                        key={msg.id}
-                        onContextMenu={(e) => {
+                          onContextMenu={(e) => {
 
                           e.preventDefault();
 
@@ -792,7 +987,7 @@ const Inbox = ({darkMode}) => {
                           });
 
                         }}
-                        className={`flex ${
+                        className={`flex mb-0 ${
                           msg.direction === "outgoing"
                             ? "justify-end"
                             : "justify-start"
@@ -804,7 +999,16 @@ const Inbox = ({darkMode}) => {
                             max-w-[75%]
                             px-4
                             py-2
-                            rounded-2xl
+                            mt-[2px]
+                            ${
+                            sameSender
+                              ? "rounded-2xl"
+                              : (
+                                  msg.direction === "outgoing"
+                                    ? "rounded-2xl rounded-tr-none"
+                                    : "rounded-2xl rounded-tl-none"
+                                )
+                          }
                             shadow-sm
                             flex
                             items-end
@@ -814,21 +1018,42 @@ const Inbox = ({darkMode}) => {
                               msg.direction === "outgoing"
                                 ? (
                                     darkMode
-                                      ? "bg-[#005c4b] text-white rounded-tr-none"
+                                      ? `
+                                        bg-[#005c4b]
+                                        text-white
+                                        rounded-tr-none
+                                        shadow-lg
+                                      `
                                       : "bg-[#d9fdd3] rounded-tr-none"
                                   )
                                 : (
                                     darkMode
-                                      ? "bg-[#202c33] text-white rounded-tl-none"
+                                      ? `
+                                        bg-[#202c33]/80
+                                        backdrop-blur-sm
+                                        text-white
+                                        rounded-tl-none
+                                      `
                                       : "bg-white rounded-tl-none"
                                   )
                             }
                           `}
                         >
 
-                          <span className="break-words">
-                            {msg.message}
-                          </span>
+                          <div className="break-words">
+
+                            {[
+                              "[PHOTO]",
+                              "[VIDEO]",
+                              "[VOICE MESSAGE]",
+                              "[DOCUMENT]",
+                              "[STICKER]"
+                            ].includes(msg.message)
+                              ? renderMediaMessage(msg.message)
+                              : msg.message
+                            }
+
+                            </div>
 
                           <span
                             className={`
@@ -869,7 +1094,7 @@ const Inbox = ({darkMode}) => {
                   ${
                     darkMode
                       ? "bg-[#202c33] border-[#2a3942]"
-                      : "bg-[#f0f2f5]"
+                      : "bg-white border-slate-200"
                   }
                 `}
               >
@@ -889,7 +1114,7 @@ const Inbox = ({darkMode}) => {
                       ${
                         darkMode
                           ? "bg-[#2a3942] border-[#3b4a54] text-white placeholder:text-slate-400"
-                          : ""
+                          : "bg-slate-50 border-slate-200"
                       }
                     `}
                   />

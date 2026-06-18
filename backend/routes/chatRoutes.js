@@ -89,7 +89,6 @@ router.get("/:contactId", (req, res) => {
     chat =>
       chat.contactId === req.params.contactId
   );
-
   res.json(messages);
 
 });
