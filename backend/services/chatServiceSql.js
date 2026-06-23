@@ -4,7 +4,9 @@ function addMessage(message) {
   db.prepare(`
     INSERT OR IGNORE INTO messages (
       id,
-      contactId,
+      phoneNumber,
+      waJid,
+      waLid,
       contactName,
       message,
       direction,
@@ -13,7 +15,9 @@ function addMessage(message) {
     )
     VALUES (
       @id,
-      @contactId,
+      @phoneNumber,
+      @waJid,
+      @waLid,
       @contactName,
       @message,
       @direction,
@@ -26,6 +30,23 @@ function addMessage(message) {
   });
 }
 
+function getRecentMessages(
+  phoneNumber,
+  limit = 10
+) {
+
+  return db.prepare(`
+    SELECT *
+    FROM messages
+    WHERE phoneNumber = ?
+    ORDER BY timestamp DESC
+    LIMIT ?
+  `)
+  .all(phoneNumber, limit)
+  .reverse();
+
+}
+
 function getChats() {
   return db
     .prepare(`
@@ -36,31 +57,27 @@ function getChats() {
     .all();
 }
 
-function deleteChat(contactId) {
+function deleteChat(phoneNumber) {
   db.prepare(`
     DELETE FROM messages
-    WHERE contactId = ?
-  `).run(contactId);
+    WHERE phoneNumber = ?
+  `).run(phoneNumber);
 }
 
-function markChatRead(contactId) {
-
+function markChatRead(phoneNumber) {
   db.prepare(`
     UPDATE messages
     SET read = 1
-    WHERE contactId = ?
-  `).run(contactId);
-
+    WHERE phoneNumber = ?
+  `).run(phoneNumber);
 }
 
-function markChatUnread(contactId) {
-
+function markChatUnread(phoneNumber) {
   db.prepare(`
     UPDATE messages
     SET read = 0
-    WHERE contactId = ?
-  `).run(contactId);
-
+    WHERE phoneNumber = ?
+  `).run(phoneNumber);
 }
 
 function deleteMessage(messageId) {
@@ -92,5 +109,7 @@ module.exports = {
   markChatRead,
   markChatUnread,
   deleteMessage,
-  messageExists
+  messageExists,
+  getRecentMessages
+
 };

@@ -16,25 +16,37 @@ function getContacts() {
 
 function addContact(contact) {
   db.prepare(`
-    INSERT INTO contacts (
-      id,
+    INSERT OR REPLACE INTO contacts (
+      phoneNumber,
+      waJid,
+      waLid,
       name,
-      phone,
       relationship,
-      whatsappId,
-      botEnabled
+      aiContext,
+      botEnabled,
+      createdAt
     )
     VALUES (
-      @id,
+      @phoneNumber,
+      @waJid,
+      @waLid,
       @name,
-      @phone,
       @relationship,
-      @whatsappId,
-      @botEnabled
+      @aiContext,
+      @botEnabled,
+      @createdAt
     )
   `).run({
     ...contact,
-    botEnabled: contact.botEnabled ? 1 : 0
+
+    relationship:
+      contact.relationship || "Unknown",
+
+    aiContext:
+      contact.aiContext || "",
+
+    botEnabled:
+      contact.botEnabled ? 1 : 0
   });
 }
 
@@ -47,21 +59,25 @@ function saveContacts(contacts) {
 
   const insert =
     db.prepare(`
-      INSERT INTO contacts (
-        id,
+      INSERT OR REPLACE INTO contacts (
+        phoneNumber,
+        waJid,
+        waLid,
         name,
-        phone,
         relationship,
-        whatsappId,
-        botEnabled
+        aiContext,
+        botEnabled,
+        createdAt
       )
       VALUES (
-        @id,
+        @phoneNumber,
+        @waJid,
+        @waLid,
         @name,
-        @phone,
         @relationship,
-        @whatsappId,
-        @botEnabled
+        @aiContext,
+        @botEnabled,
+        @createdAt
       )
     `);
 
@@ -74,6 +90,10 @@ function saveContacts(contacts) {
 
         insert.run({
           ...contact,
+          relationship:
+            contact.relationship || "Unknown",
+          aiContext:
+            contact.aiContext || "", 
           botEnabled:
             contact.botEnabled ? 1 : 0
         });
@@ -85,15 +105,13 @@ function saveContacts(contacts) {
   transaction(contacts);
 }
 
-function getContactByWhatsappId(
-  whatsappId
-) {
+function getContactByPhone(phoneNumber) {
 
   return db.prepare(`
     SELECT *
     FROM contacts
-    WHERE whatsappId = ?
-  `).get(whatsappId);
+    WHERE phoneNumber = ?
+  `).get(phoneNumber);
 
 }
 
@@ -101,5 +119,5 @@ module.exports = {
   getContacts,
   addContact,
   saveContacts,
-  getContactByWhatsappId
+  getContactByPhone
 };

@@ -7,7 +7,7 @@ export default function Simulator({rules,contacts,setStats,replyMode,setReplyMod
     { id: 'm1', sender: 'bot', text: 'Simulator ready. Send a message to test your rules.', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
   ]);
   const [inputText, setInputText] = useState('');
-  const [impersonateId, setImpersonateId] = useState('unknown');
+  const [impersonatePhone, setImpersonatePhone] = useState('unknown');
   const chatEndRef = useRef(null);
 
   const replyModeRef = useRef(replyMode);
@@ -96,7 +96,7 @@ export default function Simulator({rules,contacts,setStats,replyMode,setReplyMod
       const conditionMet =
         !rule.targetContact ||
         rule.targetContact === 'all' ||
-        rule.targetContact === impersonateId;
+        rule.targetContact === impersonatePhone;
       if (!conditionMet) return false;
       if (rule.matchType === 'exact') {
         return lowerText === rule.keyword;
@@ -159,11 +159,18 @@ export default function Simulator({rules,contacts,setStats,replyMode,setReplyMod
         >
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Simulate As:</span>
           <select
-            value={impersonateId} onChange={(e) => setImpersonateId(e.target.value)}
+            value={impersonatePhone} onChange={(e) => setImpersonatePhone(e.target.value)}
             className="px-2 py-1 border-0 rounded-lg text-sm font-medium focus:ring-0 outline-none bg-transparent text-slate-700 cursor-pointer"
           >
             <option value="unknown">Unknown Number</option>
-            {contacts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            {contacts.map(c =>
+              <option
+                key={c.phoneNumber}
+                value={c.phoneNumber}
+              >
+                {c.name}
+              </option>
+            )}
           </select>
         </div>
       </div>

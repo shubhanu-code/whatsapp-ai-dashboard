@@ -3,8 +3,13 @@ const router = express.Router();
 
 const {
   getChats,
-  addMessage,
-  deleteMessage
+  deleteMessage,
+  addMessage
+} = require("../services/chatServiceSql");
+const {
+  deleteChat,
+  markChatRead,
+  markChatUnread
 } = require("../services/chatServiceSql");
 
 const {
@@ -29,10 +34,15 @@ router.get("/conversations", (req, res) => {
 
   chats.forEach(chat => {
 
-    if (!conversations[chat.contactId]) {
+    const contactKey =
+      chat.phoneNumber ||
+      chat.waLid ||
+      chat.waJid;
+    
 
-      conversations[chat.contactId] = {
-        contactId: chat.contactId,
+    if (!conversations[contactKey]) {
+      conversations[contactKey] = {
+        phoneNumber: contactKey,
         contactName:
           chat.contactName || "Unknown",
         lastMessage: chat.message,
@@ -45,30 +55,30 @@ router.get("/conversations", (req, res) => {
             : 0,
         pinned:
           conversationMeta[
-            chat.contactId
+            contactKey
           ]?.pinned || false,
         favorite:
           conversationMeta[
-            chat.contactId
+            contactKey
           ]?.favorite || false,
       };
 
     } else {
 
-      conversations[chat.contactId].lastMessage =
+      conversations[contactKey].lastMessage =
         chat.message;
 
-      conversations[chat.contactId].timestamp =
+      conversations[contactKey].timestamp =
         chat.timestamp;
 
-      conversations[chat.contactId].messageCount += 1;
+      conversations[contactKey].messageCount += 1;
 
       if (
         chat.direction === "incoming" &&
         !chat.read
       ) {
         conversations[
-          chat.contactId
+          contactKey
         ].unreadCount += 1;
       }
 
@@ -81,15 +91,21 @@ router.get("/conversations", (req, res) => {
   );
 
 });
-router.get("/:contactId", (req, res) => {
+router.get("/:phoneNumber", (req, res) => {
 
   const chats = getChats();
 
-  const messages = chats.filter(
-    chat =>
-      chat.contactId === req.params.contactId
-  );
-  res.json(messages);
+  const messages = chats.filter(chat => {
+
+    const contactKey =
+      chat.phoneNumber ||
+      chat.waLid ||
+      chat.waJid;
+
+    return contactKey === req.params.phoneNumber;
+
+  });
+    res.json(messages);
 
 });
 
@@ -97,21 +113,49 @@ router.post("/send", async (req, res) => {
 
   try {
 
-    const { contactId, message } =
+    const { phoneNumber, message } =
       req.body;
 
-    if (!contactId || !message) {
+    if (!phoneNumber || !message) {
 
       return res.status(400).json({
         error: "Missing fields"
       });
 
     }
+    let jid = phoneNumber;
 
-    await global.waClient.sendMessage(
-      contactId,
-      message
+    if (!jid.includes("@")) {
+      jid = `${jid}@s.whatsapp.net`;
+    }
+
+    console.log("SENDING TO JID:", jid);
+
+    await global.baileysSock.sendMessage(
+      jid,
+      {
+        text: message
+      }
     );
+    addMessage({
+      id: Date.now().toString(),
+
+      phoneNumber,
+
+      waJid: jid,
+
+      waLid: null,
+
+      contactName: "",
+
+      message,
+
+      direction: "outgoing",
+
+      timestamp: new Date().toISOString(),
+
+      read: true
+    });
 
     res.json({
       success: true
@@ -130,11 +174,11 @@ router.post("/send", async (req, res) => {
 });
 
 router.post(
-  "/pin/:contactId",
+  "/pin/:phoneNumber",
   (req, res) => {
 
     togglePin(
-      req.params.contactId
+      req.params.phoneNumber
     );
 
     res.json({
@@ -145,11 +189,11 @@ router.post(
 );
 
 router.post(
-  "/favorite/:contactId",
+  "/favorite/:phoneNumber",
   (req, res) => {
 
     toggleFavorite(
-      req.params.contactId
+      req.params.phoneNumber
     );
 
     res.json({

@@ -22,9 +22,11 @@ function getAnalytics() {
 
 function getTopContacts() {
   return db.prepare(`
-    SELECT contactName, COUNT(*) as totalMessages
+    SELECT
+      contactName,
+      COUNT(*) as totalMessages
     FROM messages
-    GROUP BY contactId
+    GROUP BY phoneNumber
     ORDER BY totalMessages DESC
     LIMIT 5
   `).all();

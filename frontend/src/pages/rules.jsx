@@ -237,7 +237,7 @@ export default function Rules({rules,setRules,contacts,darkMode}) {
                 `}
               >
                 <option value="all">Everyone (All Contacts & Unknown)</option>
-                {contacts.map(c => <option key={c.id} value={c.id}>Only {c.name}</option>)}
+                {contacts.map(c => <option key={c.phoneNumber} value={c.phoneNumber}>Only {c.name}</option>)}
               </select>
             </div>
           </div>
@@ -289,7 +289,7 @@ export default function Rules({rules,setRules,contacts,darkMode}) {
             No active rules. Create one to start automating replies.
           </div>
         ) : rules.map(rule => {
-          const targetName = rule.targetContact === 'all' ? 'Everyone' : (contacts.find(c => c.id === rule.targetContact)?.name || 'Unknown Contact');
+          const targetName = rule.targetContact === 'all' ? 'Everyone' : (contacts.find(c => c.phoneNumber === rule.targetContact)?.name || 'Unknown Contact');
           return (
             <div
               key={rule.id}

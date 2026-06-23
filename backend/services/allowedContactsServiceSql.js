@@ -4,11 +4,11 @@ function getAllowedContacts() {
 
   return db
     .prepare(`
-      SELECT whatsappId
+      SELECT phoneNumber
       FROM allowed_contacts
     `)
     .all()
-    .map(row => row.whatsappId);
+    .map(row => row.phoneNumber);
 
 }
 
@@ -22,7 +22,7 @@ function saveAllowedContacts(contacts) {
   const insert =
     db.prepare(`
       INSERT INTO allowed_contacts (
-        whatsappId
+        phoneNumber
       )
       VALUES (?)
     `);
@@ -32,8 +32,8 @@ function saveAllowedContacts(contacts) {
 
       clear.run();
 
-      for (const contactId of data) {
-        insert.run(contactId);
+      for (const phoneNumber of data) {
+        insert.run(phoneNumber);
       }
 
     });

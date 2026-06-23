@@ -13,7 +13,8 @@ import {
   SquareCode,
   Sun,
   Moon,
-  X
+  X,
+  Settings2
 } from 'lucide-react';
 
 import Inbox from "./pages/Inbox.jsx";
@@ -24,6 +25,7 @@ import Overview from "./pages/Overview";
 import Toast from "./components/Toast";
 import Sidebar from "./components/Sidebar";
 import Analytics from "./pages/Analytics";
+import Settings from "./pages/Settings";
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const REPLY_MODES = new Set(['rules', 'ai', 'smart']);
@@ -58,18 +60,16 @@ export default function App() {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        const [rulesRes, contactsRes, allowedRes, settingsRes,analyticsRes] = await Promise.all([
+        const [rulesRes, contactsRes, settingsRes,analyticsRes] = await Promise.all([
           fetch(`${API_BASE}/rules`),
           fetch(`${API_BASE}/contacts`),
-          fetch(`${API_BASE}/allowed-contacts`),
           fetch(`${API_BASE}/settings`),
           fetch(`${API_BASE}/analytics`)
         ]);
 
-        const [savedRules, savedContacts, allowedContacts, savedSettings, analytics] = await Promise.all([
+        const [savedRules, savedContacts, savedSettings, analytics] = await Promise.all([
           rulesRes.json(),
           contactsRes.json(),
-          allowedRes.json(),
           settingsRes.json(),
           analyticsRes.json()
         ]);
@@ -78,15 +78,12 @@ export default function App() {
           setRules(savedRules);
         }
 
-        const allowedSet = new Set(Array.isArray(allowedContacts) ? allowedContacts : []);
-        const baseContacts = Array.isArray(savedContacts) && savedContacts.length > 0
-          ? savedContacts
-          : INITIAL_CONTACTS;
+        const baseContacts =
+          Array.isArray(savedContacts)
+            ? savedContacts
+            : [];
 
-        setContacts(baseContacts.map(contact => ({
-          ...contact,
-          botEnabled: Boolean(contact.whatsappId && allowedSet.has(contact.whatsappId))
-        })));
+        setContacts(baseContacts);
 
         if (REPLY_MODES.has(savedSettings?.replyMode)) {
           setReplyMode(savedSettings.replyMode);
@@ -119,6 +116,7 @@ export default function App() {
     { id: 'simulator', label: 'Chat Simulator', icon: Smartphone },
     { id: 'inbox', label: 'Inbox', icon: Send },
     { id: 'analytics',label:'Analytics',icon: LayoutDashboard},
+    { id: "settings",label: "Settings",icon: Settings2}
   ];
 
   return (
@@ -263,6 +261,12 @@ export default function App() {
 
         {activeTab === 'analytics' && (
           <Analytics
+            darkMode={darkMode}
+          />
+        )}
+      
+        {activeTab === "settings" && (
+          <Settings
             darkMode={darkMode}
           />
         )}

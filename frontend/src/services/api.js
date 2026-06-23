@@ -8,16 +8,16 @@ export const getConversations = async () => {
   return response.json();
 };
 
-export const getMessages = async (contactId) => {
+export const getMessages = async (phoneNumber) => {
   const response = await fetch(
-    `${API_BASE}/chats/${encodeURIComponent(contactId)}`
+    `${API_BASE}/chats/${encodeURIComponent(phoneNumber)}`
   );
 
   return response.json();
 };
 
 export const sendMessage = async (
-  contactId,
+  phoneNumber,
   message
 ) => {
   const response = await fetch(
@@ -30,7 +30,7 @@ export const sendMessage = async (
       },
 
       body: JSON.stringify({
-        contactId,
+        phoneNumber,
         message
       })
     }
@@ -40,12 +40,12 @@ export const sendMessage = async (
 };
 
 export const deleteChat = async (
-  contactId
+  phoneNumber
 ) => {
 
   const response =
     await fetch(
-      `http://localhost:5000/messages/${contactId}`,
+      `http://localhost:5000/messages/${phoneNumber}`,
       {
         method: "DELETE"
       }

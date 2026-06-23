@@ -1,11 +1,11 @@
 const db = require("../db/database");
 
-function getConversation(contactId) {
+function getConversation(phoneNumber) {
   return db.prepare(`
     SELECT *
     FROM conversations
-    WHERE contactId = ?
-  `).get(contactId);
+    WHERE phoneNumber = ?
+  `).get(phoneNumber);
 }
 
 function getAllConversations() {
@@ -19,7 +19,7 @@ function getAllConversations() {
 
   rows.forEach(row => {
 
-    map[row.contactId] = {
+    map[row.phoneNumber] = {
       pinned: Boolean(row.pinned),
       favorite: Boolean(row.favorite)
     };
@@ -30,36 +30,35 @@ function getAllConversations() {
 
 }
 
-function ensureConversation(contactId) {
+function ensureConversation(phoneNumber) {
 
   db.prepare(`
     INSERT OR IGNORE INTO conversations (
-      contactId
+      phoneNumber
     )
     VALUES (?)
-  `).run(contactId);
+  `).run(phoneNumber);
 
 }
 
-function togglePin(contactId) {
-
-  ensureConversation(contactId);
+function togglePin(phoneNumber) {
+  ensureConversation(phoneNumber);
 
   db.prepare(`
     UPDATE conversations
-    SET pinned =
-      CASE
-        WHEN pinned = 1 THEN 0
-        ELSE 1
-      END
-    WHERE contactId = ?
-  `).run(contactId);
+    SET pinned = CASE
+      WHEN pinned = 1 THEN 0
+      ELSE 1
+    END
+    WHERE phoneNumber = ?
+  `).run(phoneNumber);
 
+  return getConversation(phoneNumber);
 }
 
-function toggleFavorite(contactId) {
+function toggleFavorite(phoneNumber) {
 
-  ensureConversation(contactId);
+  ensureConversation(phoneNumber);
 
   db.prepare(`
     UPDATE conversations
@@ -68,8 +67,8 @@ function toggleFavorite(contactId) {
         WHEN favorite = 1 THEN 0
         ELSE 1
       END
-    WHERE contactId = ?
-  `).run(contactId);
+    WHERE phoneNumber = ?
+  `).run(phoneNumber);
 
 }
 

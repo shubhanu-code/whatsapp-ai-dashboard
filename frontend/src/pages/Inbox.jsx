@@ -12,6 +12,7 @@ import {
   Sticker
 } from "lucide-react";
 import {
+  API_BASE,
   getConversations,
   getMessages,
   sendMessage,
@@ -28,15 +29,6 @@ const Inbox = ({darkMode}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [contextMenu,setContextMenu] =useState(null);
   const [messageMenu,setMessageMenu] =useState(null);
-  const loadMessages = async (
-    contactId
-  ) => {
-
-    const data =
-      await getMessages(contactId);
-    setMessages(data);
-
-  };
 
   useEffect(() => {
 
@@ -78,6 +70,16 @@ const Inbox = ({darkMode}) => {
     }
 
   }, [messages]);
+  const loadMessages = async (
+    phoneNumber
+  ) => {
+    const data =
+      await getMessages(
+        phoneNumber
+      );
+
+    setMessages(data);
+  };
 
   const sendReply = async () => {
 
@@ -91,12 +93,12 @@ const Inbox = ({darkMode}) => {
     try {
 
       await sendMessage(
-        selectedConversation.contactId,
+        selectedConversation.phoneNumber,
         replyText
       );
 
       await loadMessages(
-        selectedConversation.contactId
+        selectedConversation.phoneNumber
       );
 
       setReplyText("");
@@ -109,13 +111,13 @@ const Inbox = ({darkMode}) => {
 
   };
   const togglePin = async (
-    contactId
+    phoneNumber
   ) => {
 
     try {
 
       await fetch(
-        `http://localhost:5000/chats/pin/${contactId}`,
+        `${API_BASE}/chats/pin/${phoneNumber}`,
         {
           method: "POST"
         }
@@ -137,13 +139,13 @@ const Inbox = ({darkMode}) => {
   };
 
   const toggleFavorite = async (
-    contactId
+    phoneNumber
   ) => {
 
     try {
 
       await fetch(
-        `http://localhost:5000/chats/favorite/${contactId}`,
+        `${API_BASE}/chats/favorite/${phoneNumber}`,
         {
           method: "POST"
         }
@@ -165,13 +167,13 @@ const Inbox = ({darkMode}) => {
   };
 
   const markUnread = async (
-    contactId
+    phoneNumber
   ) => {
 
     try {
 
       await fetch(
-        `http://localhost:5000/messages/unread/${contactId}`,
+        `${API_BASE}/messages/unread/${phoneNumber}`,
         {
           method: "POST"
         }
@@ -200,14 +202,14 @@ const Inbox = ({darkMode}) => {
     try {
 
       await fetch(
-        `http://localhost:5000/chats/message/${messageId}`,
+        `${API_BASE}/chats/message/${messageId}`,
         {
           method: "DELETE"
         }
       );
 
       await loadMessages(
-        selectedConversation.contactId
+        selectedConversation.phoneNumber
       );
 
       setMessageMenu(null);
@@ -219,11 +221,11 @@ const Inbox = ({darkMode}) => {
     }
 
   };
-  const deleteChat = async (contactId) => {
+  const deleteChat = async (phoneNumber) => {
     try {
 
       await fetch(
-        `http://localhost:5000/messages/${contactId}`,
+        `${API_BASE}/messages/${phoneNumber}`,
         {
           method: "DELETE"
         }
@@ -270,7 +272,7 @@ const Inbox = ({darkMode}) => {
       ) {
 
         await loadMessages(
-          selectedConversation.contactId
+          selectedConversation.phoneNumber
         );
 
       }
@@ -296,21 +298,25 @@ const Inbox = ({darkMode}) => {
 
   const filteredConversations =
     conversations
-      .filter(conv => {
+        .filter(
+          conv =>
+            !conv.phoneNumber?.includes("@g.us")
+        )
+        .filter(conv => {
 
         const search =
           searchTerm.toLowerCase();
 
         return (
 
-          conv.contactName
-            ?.toLowerCase()
+          (conv.contactName || "")
+            .toLowerCase()
             .includes(search)
 
           ||
 
-          conv.lastMessage
-            ?.toLowerCase()
+          (conv.lastMessage || "")
+            .toLowerCase()
             .includes(search)
 
         );
@@ -329,18 +335,18 @@ const Inbox = ({darkMode}) => {
         );
 
       });
-  const handleDeleteChat = async (contactId) => {
+  const handleDeleteChat = async (phoneNumber) => {
 
-    await deleteChat(contactId);
+    await deleteChat(phoneNumber);
 
     setConversations(
       conversations.filter(
-        c => c.contactId !== contactId
+        c => c.phoneNumber !== phoneNumber
       )
     );
 
     if (
-      selectedConversation?.contactId === contactId
+      selectedConversation?.phoneNumber === phoneNumber
     ) {
       setSelectedConversation(null);
       setMessages([]);
@@ -590,19 +596,20 @@ const Inbox = ({darkMode}) => {
           {filteredConversations.map(conv => (
 
           <div
-            key={conv.contactId}
+            key={conv.phoneNumber}
 
             onClick={async() => {
+              console.log("CLICKED:", conv);
               setSelectedConversation(conv);
 
               await fetch(
-                `http://localhost:5000/messages/read/${conv.contactId}`,
+                `${API_BASE}/messages/read/${conv.phoneNumber}`,
                 {
                   method: "POST"
                 }
               );
 
-              await loadMessages(conv.contactId);
+              await loadMessages(conv.phoneNumber);
 
               const updated =
                 await getConversations();
@@ -633,7 +640,7 @@ const Inbox = ({darkMode}) => {
               duration-200
               hover:translate-x-1
               ${
-                selectedConversation?.contactId === conv.contactId
+                selectedConversation?.phoneNumber === conv.phoneNumber
                   ? (
                       darkMode
                         ? `
@@ -1170,7 +1177,7 @@ const Inbox = ({darkMode}) => {
       <button
         onClick={() =>
           togglePin(
-            contextMenu.conversation.contactId
+            contextMenu.conversation.phoneNumber
           )
         }
         className={`
@@ -1203,7 +1210,7 @@ const Inbox = ({darkMode}) => {
       <button
         onClick={() =>
           toggleFavorite(
-            contextMenu.conversation.contactId
+            contextMenu.conversation.phoneNumber
           )
         }
         className={`
@@ -1229,7 +1236,7 @@ const Inbox = ({darkMode}) => {
       <button
         onClick={() =>
           markUnread(
-            contextMenu.conversation.contactId
+            contextMenu.conversation.phoneNumber
           )
         }
         className={`
@@ -1412,7 +1419,7 @@ const Inbox = ({darkMode}) => {
             onClick={async () => {
 
               await handleDeleteChat(
-                deleteConfirm.contactId
+                deleteConfirm.phoneNumber
               );
 
               setDeleteConfirm(null);

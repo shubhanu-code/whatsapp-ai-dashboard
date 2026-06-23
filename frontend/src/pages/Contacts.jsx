@@ -8,11 +8,12 @@ import {
 
 import { API_BASE } from "../services/api";
 export default function Contacts({ contacts, setContacts, rules, setRules,showToast,darkMode }){
+  console.log("CONTACTS DATA:", contacts);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [editingContact, setEditingContact] = useState(null);
-  const [linkingContact, setLinkingContact] = useState(null);
-  const [unlinkingContact, setUnlinkingContact] = useState(null);
+  const [activeContactTab,setActiveContactTab] =useState("basic");
+  
   const [relationship, setRelationship] = useState('Unknown');
   const saveContacts = async (updatedContacts) => {
     const response = await fetch(
@@ -28,29 +29,13 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
 
   };
 
-  const saveAllowedContacts = async (updatedContacts) => {
-    const allowed = updatedContacts
-      .filter(c => c.botEnabled && c.whatsappId)
-      .map(c => c.whatsappId);
-
-    await fetch(
-      `${API_BASE}/allowed-contacts`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(allowed)
-      }
-    );
-  };
 
   const handleAdd = async (e) => {
     e.preventDefault();
     if (!name || !phone) return;
     const existing = contacts.find(
       c =>
-        c.phone === phone ||
+        c.phoneNumber === phone ||
         c.name.toLowerCase() ===
         name.toLowerCase()
     );
@@ -65,11 +50,13 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
     const updatedContacts = [
       ...contacts,
       {
-        id: Date.now().toString(),
+        phoneNumber: phone,
+        waJid: null,
+        waLid: null,
         name,
-        phone,
         relationship,
-        botEnabled: false        
+        botEnabled: false,
+        createdAt: new Date().toISOString()
       }
     ];
     setContacts(updatedContacts);
@@ -84,7 +71,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
 
   const handleDelete = async (id) => {
     const updatedContacts = contacts.filter(
-        c => c.id !== id
+        c => c.phoneNumber !== id
     );
 
     const updatedRules = rules.map(
@@ -101,7 +88,6 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
 
         await Promise.all([
         saveContacts(updatedContacts),
-        saveAllowedContacts(updatedContacts),
         fetch(`${API_BASE}/rules`, {
             method: "POST",
             headers: {
@@ -130,7 +116,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
   const toggleBot = async (id) => {
 
     const updated = contacts.map(c =>
-        c.id === id
+        c.phoneNumber === id
         ? { ...c, botEnabled: !c.botEnabled }
         : c
     );
@@ -141,11 +127,10 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
 
         await Promise.all([
         saveContacts(updated),
-        saveAllowedContacts(updated)
         ]);
 
         const contact = contacts.find(
-        c => c.id === id
+        c => c.phoneNumber === id
         );
 
         showToast(
@@ -172,7 +157,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
 
     const updatedContacts =
       contacts.map(contact =>
-        contact.id === contactId
+        contact.phoneNumber === contactId
           ? {
               ...contact,
               relationship
@@ -190,7 +175,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
   const saveEditedContact = async () => {
 
     const updatedContacts = contacts.map(contact =>
-      contact.id === editingContact.id
+      contact.phoneNumber === editingContact.phoneNumber
         ? editingContact
         : contact
     );
@@ -198,110 +183,11 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
     setContacts(updatedContacts);
 
     await saveContacts(updatedContacts);
-
-    await saveAllowedContacts(updatedContacts);
     showToast(
       "Contact updated"
     );
 
     setEditingContact(null);
-
-  };
-  const linkContact = async (manualContactId) => {
-
-    const manualContact =
-      contacts.find(
-        c => c.id === manualContactId
-      );
-
-    if (!manualContact || !linkingContact)
-      return;
-
-    const updatedContacts =
-      contacts
-        .filter(
-          c => c.id !== linkingContact.id
-        )
-        .map(contact =>
-          contact.id === manualContactId
-            ? {
-                ...contact,
-
-                whatsappId:
-                  linkingContact.whatsappId,
-                whatsappName:
-                  linkingContact.name,
-
-                botEnabled:
-                  contact.botEnabled ||
-                  linkingContact.botEnabled,
-
-                relationship:
-                  contact.relationship !== "Unknown"
-                    ? contact.relationship
-                    : linkingContact.relationship
-              }
-            : contact
-        );
-
-    setContacts(updatedContacts);
-
-    await saveContacts(
-      updatedContacts
-    );
-
-    await saveAllowedContacts(
-      updatedContacts
-    );
-
-    setLinkingContact(null);
-    showToast(
-      "Contact linked successfully"
-    );
-
-  };
-  const unlinkContact = async (contactId) => {
-    const contact =
-      contacts.find(
-        c => c.id === contactId
-      );
-
-    if (!contact) return;
-
-    const whatsappContact = {
-      id: Date.now().toString(),
-      
-      name: 
-      contact.whatsappName ||
-      contact.name,
-      phone: "",
-      whatsappId: contact.whatsappId,
-      relationship: "Unknown",
-      botEnabled: false
-    };
-
-    const updatedContacts = [
-      ...contacts.map(c =>
-        c.id === contactId
-          ? {
-              ...c,
-              whatsappId: undefined
-            }
-          : c
-      ),
-      whatsappContact
-    ];
-
-    setContacts(updatedContacts);
-
-    await saveContacts(updatedContacts);
-
-    await saveAllowedContacts(
-      updatedContacts
-    );
-    showToast(
-      "Contact unlinked"
-    );
 
   };
 
@@ -487,7 +373,6 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
             >
               <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider">Phone Number</th>
-              <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider">Relationship</th>
               <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider">Bot</th>
               <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider text-right">Actions</th>
@@ -500,7 +385,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
               </tr>
             ) : contacts.map(c => (
               <tr
-                key={c.id}
+                key={c.phoneNumber}
                 className={`
                   transition-colors
                   ${
@@ -547,69 +432,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                 </td>
 
                 <td className="px-6 py-3.5 text-sm text-slate-600 font-mono">
-                  {c.phone || "-"}
-                </td>
-                <td className="px-6 py-3.5">
-
-                  {c.whatsappId && c.phone ? (
-
-                    <span
-                      className={`
-                        px-2
-                        py-1
-                        rounded-full
-                        text-xs
-                        font-medium
-                        ${
-                          darkMode
-                            ? "bg-green-900/20 text-green-300"
-                            : "bg-green-100 text-green-700"
-                        }
-                      `}
-                    >
-                      Linked
-                    </span>
-
-                  ) : c.whatsappId ? (
-
-                    <span
-                      className={`
-                        px-2
-                        py-1
-                        rounded-full
-                        text-xs
-                        font-medium
-                        ${
-                          darkMode
-                            ? "bg-orange-900/20 text-orange-300"
-                            : "bg-orange-100 text-orange-700"
-                        }
-                      `}
-                    >
-                      Needs Linking
-                    </span>
-
-                  ) : (
-
-                    <span
-                      className={`
-                        px-2
-                        py-1
-                        rounded-full
-                        text-xs
-                        font-medium
-                        ${
-                          darkMode
-                            ? "bg-slate-800 text-slate-300"
-                            : "bg-slate-100 text-slate-700"
-                        }
-                      `}
-                    >
-                      Manual
-                    </span>
-
-                  )}
-
+                  {c.phoneNumber || "-"}
                 </td>
 
                 <td className="px-6 py-3.5">
@@ -618,7 +441,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                     value={c.relationship || "Unknown"}
                     onChange={(e) =>
                       updateRelationship(
-                        c.id,
+                        c.phoneNumber,
                         e.target.value
                       )
                     }
@@ -682,7 +505,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      toggleBot(c.id);
+                      toggleBot(c.phoneNumber);
                     }}
                     className={`
                       px-3
@@ -711,27 +534,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
 
                 <td className="px-6 py-3.5 text-right">
                   <div className="flex justify-end gap-2">
-                    {c.whatsappId && !c.phone && (
-                      <button
-                        type="button"
-                        onClick={() => setLinkingContact(c)}
-                        className="text-emerald-600 hover:text-emerald-700 p-2 rounded-xl hover:bg-emerald-50"
-                      >
-                        🔗
-                      </button>
-                    )}
-                    {c.whatsappId && c.phone && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setUnlinkingContact(c)
-                        }
-                        className="text-orange-600 hover:text-orange-700 p-2 rounded-xl hover:bg-orange-50"
-                      >
-                        🔓
-                      </button>
-                    )}
-
+                    
                     <button
                       type="button"
                       onClick={() => setEditingContact(c)}
@@ -742,7 +545,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
 
                     <button
                       type="button"
-                      onClick={() => handleDelete(c.id)}
+                      onClick={() => handleDelete(c.phoneNumber)}
                       className="text-rose-500 hover:text-rose-700 p-2 rounded-xl hover:bg-rose-50"
                     >
                       <Trash2 size={16} />
@@ -763,39 +566,115 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
               <h3 className="text-lg font-semibold mb-4">
                 Edit Contact
               </h3>
+              <div className="flex gap-2 mb-4">
+
+              <button
+                onClick={() =>
+                  setActiveContactTab("basic")
+                }
+                className={`
+                  px-3 py-2 rounded-lg text-sm
+                  ${
+                    activeContactTab === "basic"
+                      ? "bg-[#008069] text-white"
+                      : "bg-slate-100"
+                  }
+                `}
+              >
+                Basic
+              </button>
+
+              <button
+                onClick={() =>
+                  setActiveContactTab("ai")
+                }
+                className={`
+                  px-3 py-2 rounded-lg text-sm
+                  ${
+                    activeContactTab === "ai"
+                      ? "bg-[#008069] text-white"
+                      : "bg-slate-100"
+                  }
+                `}
+              >
+                AI Profile
+              </button>
+
+            </div>
 
               <div className="space-y-4">
 
-                <input
-                  type="text"
-                  value={editingContact.name}
-                  onChange={(e) =>
-                    setEditingContact({
-                      ...editingContact,
-                      name: e.target.value
-                    })
-                  }
-                  placeholder="Name"
-                  className="w-full px-4 py-2 border rounded-xl"
-                />
+                {activeContactTab === "basic" && (
+                  <>
+                    <input
+                      type="text"
+                      value={editingContact.name}
+                      onChange={(e) =>
+                        setEditingContact({
+                          ...editingContact,
+                          name: e.target.value
+                        })
+                      }
+                      placeholder="Name"
+                      className="w-full px-4 py-2 border rounded-xl"
+                    />
 
-                <input
-                  type="text"
-                  value={editingContact.phone || ""}
-                  onChange={(e) =>
-                    setEditingContact({
-                      ...editingContact,
-                      phone: e.target.value
-                    })
-                  }
-                  placeholder="Phone Number"
-                  className="w-full px-4 py-2 border rounded-xl"
-                />
+                    <input
+                      type="text"
+                      value={editingContact.phoneNumber || ""}
+                      onChange={(e) =>
+                        setEditingContact({
+                          ...editingContact,
+                          phoneNumber: e.target.value
+                        })
+                      }
+                      placeholder="Phone Number"
+                      className="w-full px-4 py-2 border rounded-xl"
+                    />
+                  </>
+                )}
+
+                {activeContactTab === "ai" && (
+                  <div className="space-y-3">
+
+                    <label className="text-sm font-medium">
+                      AI Context
+                    </label>
+
+                    <textarea
+                      rows={8}
+                      value={
+                        editingContact.aiContext || ""
+                      }
+                      onChange={(e) =>
+                        setEditingContact({
+                          ...editingContact,
+                          aiContext: e.target.value
+                        })
+                      }
+                      placeholder={`Father.
+
+              Discusses academics and finances.
+
+              Keep replies respectful and concise.`}
+                      className="
+                        w-full
+                        border
+                        rounded-xl
+                        p-3
+                        resize-none
+                      "
+                    />
+
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-3">
 
                   <button
-                    onClick={() => setEditingContact(null)}
+                    onClick={() =>
+                      setEditingContact(null)
+                    }
                     className="px-4 py-2 rounded-xl bg-slate-100"
                   >
                     Cancel
@@ -816,129 +695,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
 
           </div>
         )}
-        {linkingContact && (
 
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
-            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-
-              <h3 className="text-lg font-semibold mb-4">
-                Link WhatsApp Contact
-              </h3>
-
-              <p className="text-sm text-slate-600 mb-4">
-                Link:
-                <b>
-                  {" "}
-                  {linkingContact.name}
-                  {" "}
-                </b>
-                to an existing contact.
-              </p>
-
-              <div className="space-y-2">
-
-                {contacts
-                  .filter(c => !c.whatsappId)
-                  .map(contact => (
-
-                    <button
-                      key={contact.id}
-                      onClick={() =>
-                        linkContact(contact.id)
-                      }
-                      className="w-full text-left px-4 py-3 border rounded-xl hover:bg-slate-50"
-                    >
-                      <div className="font-medium">
-                        {contact.name}
-                      </div>
-
-                      <div className="text-xs text-slate-500">
-                        {contact.phone || "-"}
-                      </div>
-
-                    </button>
-
-                  ))}
-
-              </div>
-
-              <div className="flex justify-end mt-4">
-
-                <button
-                  onClick={() =>
-                    setLinkingContact(null)
-                  }
-                  className="px-4 py-2 rounded-xl bg-slate-100"
-                >
-                  Cancel
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        )}
-        {unlinkingContact && (
-
-          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
-            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
-
-              <h3 className="text-lg font-semibold mb-3">
-                Unlink Contact?
-              </h3>
-
-              <p className="text-sm text-slate-600">
-                Are you sure you want to unlink
-                <b>
-                  {" "}
-                  {unlinkingContact.name}
-                </b>
-                ?
-              </p>
-
-              <p className="text-xs text-slate-500 mt-2">
-                This will create a separate
-                WhatsApp contact that can be linked
-                again later.
-              </p>
-
-              <div className="flex justify-end gap-3 mt-6">
-
-                <button
-                  onClick={() =>
-                    setUnlinkingContact(null)
-                  }
-                  className="px-4 py-2 rounded-xl bg-slate-100"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={async () => {
-
-                    await unlinkContact(
-                      unlinkingContact.id
-                    );
-
-                    setUnlinkingContact(null);
-
-                  }}
-                  className="px-4 py-2 rounded-xl bg-orange-600 text-white hover:bg-orange-700"
-                >
-                  Unlink
-                </button>
-
-              </div>
-
-            </div>
-
-          </div>
-
-        )}
         
     </div>
   );
