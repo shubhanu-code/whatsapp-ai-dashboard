@@ -15,10 +15,13 @@ const groq = new Groq({
 });
 
 
-async function generateGroqReply(message,history = []) {
+async function generateGroqReply(message,history = [],contact) {
 
   const settings =
     getSettings();
+  const model =
+    settings.ai_model ||
+    "llama-3.1-8b-instant";
 
   const aiContext =
     settings.ai_context || "";
@@ -32,30 +35,111 @@ async function generateGroqReply(message,history = []) {
       content:
         msg.message
     }));
+  const memoryLimit =
+    Number(
+      settings.memory_limit || 10
+    );
 
+  const memoryText =
+    history
+      .slice(-memoryLimit)
+      .map(msg =>
+        `${msg.direction}: ${msg.message}`
+      )
+      .join("\n");
+  console.log(
+    "MODEL:",
+    model
+  );
+
+  console.log(
+    "PERSONALITY:",
+    settings.ai_personality
+  );
   const systemPrompt = `
-${aiContext}
+  OWNER:
+  Shubhanu Chatterjee
 
-You are a helpful WhatsApp assistant.
-Keep replies short and friendly.
-`;
+  OWNER INFO:
+  Studies DSAI at IIIT Dharwad.
+  AI PERSONALITY:
+  ${settings.ai_personality || "friendly"}
 
-  const completion =
-    await groq.chat.completions.create({
-      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+  CONTACT:
+  Name: ${contact.name || "Unknown"}
 
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        ...conversationHistory,
-        {
-          role: "user",
-          content: message
-        }
-      ]
-    });
+  Relationship:
+  ${contact.relationship || "Unknown"}
+
+  CONTACT PROFILE INSTRUCTIONS:
+  ${contact.aiContext || "No special instructions"}
+
+  RECENT CONVERSATION MEMORY:
+  ${memoryText || "No memory available"}
+
+  RULES:
+  - You are Shubhanu's AI assistant.
+  - The CONTACT above is the person currently chatting.
+  - If the contact asks "Who am I?", answer using the CONTACT information.
+  - If the contact asks about Shubhanu, answer using OWNER information.
+  - Follow the contact profile instructions.
+  - CONTACT PROFILE instructions override GLOBAL CONTEXT when there is a conflict.
+  - Keep replies concise.
+
+  PERSONALITY RULES:
+
+    - friendly: warm and approachable.
+    - professional: concise and business-like.
+    - casual: relaxed and conversational.
+    - formal: respectful and structured.
+    - humorous: light humor when appropriate.
+
+  GLOBAL CONTEXT:
+  ${aiContext}
+  `;
+
+  
+  const messages = [
+    {
+      role: "system",
+      content: systemPrompt
+    },
+    ...conversationHistory
+  ];
+  try {
+
+    const completion =
+      await groq.chat.completions.create({
+        model,
+        messages
+      });
+
+    return completion
+      .choices[0]
+      .message.content;
+
+  } catch (err) {
+
+    console.error(
+      "MODEL FAILED:",
+      model
+    );
+
+    const fallback =
+      await groq.chat.completions.create({
+
+        model:
+          "llama-3.1-8b-instant",
+
+        messages
+
+      });
+
+    return fallback
+      .choices[0]
+      .message.content;
+
+  }
 
   return completion
     .choices[0]
@@ -319,7 +403,7 @@ async function startBaileys() {
               waJid: parsed.waJid,
               waLid: parsed.waLid,
               contactName: parsed.contactName,
-              message: aiReply,
+              message: matchedRule.reply,
               direction: "outgoing",
               timestamp: new Date().toISOString(),
               read: true
@@ -367,7 +451,8 @@ async function startBaileys() {
             const aiReply =
               await generateGroqReply(
                 parsed.message,
-                history
+                history,
+                contact
               );
 
             await sock.sendMessage(
@@ -444,7 +529,8 @@ async function startBaileys() {
             const aiReply =
               await generateGroqReply(
                 parsed.message,
-                history
+                history,
+                contact
               );
 
             await sock.sendMessage(

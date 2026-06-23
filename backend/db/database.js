@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS contacts (
   waLid TEXT,
   name TEXT,
   relationship TEXT DEFAULT 'Unknown',
+  aiContext TEXT DEFAULT '',
   botEnabled INTEGER DEFAULT 0,
   createdAt TEXT
 );
@@ -58,6 +59,15 @@ CREATE TABLE IF NOT EXISTS conversations (
   favorite INTEGER DEFAULT 0
 );
 `);
+
+try {
+
+  db.prepare(`
+    ALTER TABLE contacts
+    ADD COLUMN aiContext TEXT DEFAULT ''
+  `).run();
+
+} catch {}
 
 db.prepare(`
   INSERT OR IGNORE INTO settings

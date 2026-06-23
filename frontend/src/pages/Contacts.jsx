@@ -28,7 +28,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
     );
 
   };
-
+  
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -68,6 +68,18 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
     setPhone('');
     setRelationship('Unknown');
   };
+  const tableHeaderClass = `
+                px-6 py-3.5
+                font-semibold
+                text-xs
+                uppercase
+                tracking-wider
+                ${
+                  darkMode
+                  ? "bg-[#172229]"
+                  : "bg-slate-50"
+                }
+              `;
 
   const handleDelete = async (id) => {
     const updatedContacts = contacts.filter(
@@ -175,7 +187,8 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
   const saveEditedContact = async () => {
 
     const updatedContacts = contacts.map(contact =>
-      contact.phoneNumber === editingContact.phoneNumber
+      contact.phoneNumber ===
+      editingContact.originalPhoneNumber
         ? editingContact
         : contact
     );
@@ -190,6 +203,37 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
     setEditingContact(null);
 
   };
+  function getRelationshipColor(
+    relationship
+  ) {
+
+    switch (
+      relationship?.toLowerCase()
+    ) {
+
+      case "mother":
+      case "father":
+        return "border-emerald-500 text-emerald-400";
+
+      case "brother":
+      case "sister":
+        return "border-cyan-500 text-cyan-400";
+
+      case "college friend":
+      case "classmate":
+        return "border-sky-500 text-sky-400";
+
+      case "faculty":
+        return "border-violet-500 text-violet-400";
+
+      case "recruiter":
+        return "border-amber-500 text-amber-400";
+
+      default:
+        return "border-slate-500 text-slate-400";
+    }
+
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -341,7 +385,17 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
             </button>
           </div>
         </form>
-        <p className="text-xs text-slate-500 mt-2">
+        <p
+          className={`
+            text-xs
+            mt-2
+            ${
+              darkMode
+                ? "text-slate-500"
+                : "text-slate-500"
+            }
+          `}
+        >
           Contacts are linked automatically when they message you on WhatsApp.
         </p>
       </div>
@@ -371,14 +425,24 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                 }
               `}
             >
-              <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider">Phone Number</th>
-              <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider">Relationship</th>
-              <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider">Bot</th>
-              <th className="px-6 py-3.5 font-semibold text-xs text-slate-500 uppercase tracking-wider text-right">Actions</th>
+              
+              <th className={tableHeaderClass}>Name</th>
+              <th className={tableHeaderClass}>Phone Number</th>
+              <th className={tableHeaderClass}>Relationship</th>
+              <th className={tableHeaderClass}>Bot</th>
+              <th className={`${tableHeaderClass} text-right`}>Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody
+            className={`
+              divide-y
+              ${
+                darkMode
+                  ? "divide-[#202c33]"
+                  : "divide-slate-100"
+              }
+            `}
+          >
             {contacts.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-400 font-medium">No contacts found. Add one above.</td>
@@ -427,11 +491,38 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                     >
                       <User size={15} />
                     </div>
-                    {c.name}
+                    <div className="flex items-center gap-2">
+                      <span>{c.name}</span>
+
+                      {c.aiContext?.trim() && (
+                        <span
+                          className="
+                            px-2
+                            py-0.5
+                            text-[10px]
+                            rounded-full
+                            bg-violet-500/15
+                            text-violet-400
+                          "
+                        >
+                          Context Provided
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </td>
 
-                <td className="px-6 py-3.5 text-sm text-slate-600 font-mono">
+                <td className={`
+                  px-6
+                  py-3.5
+                  text-sm
+                  font-mono
+                  ${
+                    darkMode
+                      ? "text-slate-300"
+                      : "text-slate-600"
+                  }
+                `}>
                   {c.phoneNumber || "-"}
                 </td>
 
@@ -446,15 +537,20 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                       )
                     }
                     className={`
-                      px-2
-                      py-1
-                      border
-                      rounded-lg
+                      px-3
+                      py-1.5
+                      rounded-xl
                       text-sm
+                      font-medium
+                      border
+                      transition-all
+                      ${getRelationshipColor(
+                        c.relationship
+                      )}
                       ${
                         darkMode
-                          ? "bg-[#202c33] text-white border-[#2a3942]"
-                          : "bg-white text-slate-800 border-slate-200"
+                          ? "bg-[#202c33]"
+                          : "bg-white"
                       }
                     `}
                   >
@@ -537,8 +633,24 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                     
                     <button
                       type="button"
-                      onClick={() => setEditingContact(c)}
-                      className="text-blue-500 hover:text-blue-700 p-2 rounded-xl hover:bg-blue-50"
+                      onClick={() =>
+                        setEditingContact({
+                          ...c,
+                          originalPhoneNumber:
+                            c.phoneNumber
+                        })
+                      }
+                      className={`
+                        p-2
+                        rounded-xl
+                        text-blue-500
+                        transition-all
+                        ${
+                          darkMode
+                            ? "hover:bg-[#202c33] hover:text-blue-400"
+                            : "hover:bg-blue-50 hover:text-blue-700"
+                        }
+                      `}
                     >
                       <Edit3 size={16} />
                     </button>
@@ -546,7 +658,17 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                     <button
                       type="button"
                       onClick={() => handleDelete(c.phoneNumber)}
-                      className="text-rose-500 hover:text-rose-700 p-2 rounded-xl hover:bg-rose-50"
+                      className={`
+                        p-2
+                        rounded-xl
+                        text-rose-500
+                        transition-all
+                        ${
+                          darkMode
+                            ? "hover:bg-[#202c33] hover:text-rose-400"
+                            : "hover:bg-rose-50 hover:text-rose-700"
+                        }
+                      `}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -561,7 +683,20 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
         {editingContact && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 
-            <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <div
+              className={`
+                rounded-2xl
+                p-6
+                w-full
+                max-w-md
+                shadow-xl
+                ${
+                  darkMode
+                    ? "bg-[#111b21] text-white"
+                    : "bg-white text-slate-800"
+                }
+              `}
+            >
 
               <h3 className="text-lg font-semibold mb-4">
                 Edit Contact
@@ -573,11 +708,17 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                   setActiveContactTab("basic")
                 }
                 className={`
-                  px-3 py-2 rounded-lg text-sm
+                  px-3
+                  py-2
+                  rounded-lg
+                  text-sm
+                  transition-all
                   ${
                     activeContactTab === "basic"
                       ? "bg-[#008069] text-white"
-                      : "bg-slate-100"
+                      : darkMode
+                        ? "bg-[#202c33] text-slate-300 hover:bg-[#2a3942]"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }
                 `}
               >
@@ -589,11 +730,17 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                   setActiveContactTab("ai")
                 }
                 className={`
-                  px-3 py-2 rounded-lg text-sm
+                  px-3
+                  py-2
+                  rounded-lg
+                  text-sm
+                  transition-all
                   ${
                     activeContactTab === "ai"
                       ? "bg-[#008069] text-white"
-                      : "bg-slate-100"
+                      : darkMode
+                        ? "bg-[#202c33] text-slate-300 hover:bg-[#2a3942]"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }
                 `}
               >
@@ -616,7 +763,18 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                         })
                       }
                       placeholder="Name"
-                      className="w-full px-4 py-2 border rounded-xl"
+                      className={`
+                        w-full
+                        px-4
+                        py-2
+                        border
+                        rounded-xl
+                        ${
+                          darkMode
+                            ? "bg-[#202c33] text-white border-[#2a3942]"
+                            : "bg-white border-slate-300"
+                        }
+                      `}
                     />
 
                     <input
@@ -629,16 +787,32 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                         })
                       }
                       placeholder="Phone Number"
-                      className="w-full px-4 py-2 border rounded-xl"
+                      className={`
+                        w-full
+                        px-4
+                        py-2
+                        border
+                        rounded-xl
+                        ${
+                          darkMode
+                            ? "bg-[#202c33] text-white border-[#2a3942]"
+                            : "bg-white border-slate-300"
+                        }
+                      `}
                     />
                   </>
                 )}
 
                 {activeContactTab === "ai" && (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
 
-                    <label className="text-sm font-medium">
-                      AI Context
+                    <label
+                      className="
+                        text-sm
+                        font-medium
+                      "
+                    >
+                      AI Profile
                     </label>
 
                     <textarea
@@ -652,19 +826,57 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                           aiContext: e.target.value
                         })
                       }
-                      placeholder={`Father.
+                      placeholder={`Father
 
-              Discusses academics and finances.
+                  Discusses academics and finances.
 
-              Keep replies respectful and concise.`}
-                      className="
+                  Keep replies respectful and concise.`}
+                      className={`
                         w-full
                         border
                         rounded-xl
                         p-3
                         resize-none
-                      "
+                        ${
+                          darkMode
+                            ? "bg-[#202c33] text-white border-[#2a3942]"
+                            : "bg-white text-slate-800 border-slate-300"
+                        }
+                      `}
                     />
+                    <div
+                      className={`
+                        text-xs
+                        rounded-lg
+                        p-3
+                        ${
+                          darkMode
+                            ? "bg-[#202c33] text-slate-400"
+                            : "bg-slate-50 text-slate-500"
+                        }
+                      `}
+                    >
+                      Example:
+                      <br />
+                      Relationship: Father
+                      <br />
+                      Preferred tone: Respectful
+                      <br />
+                      Topics: Academics, finances
+                    </div>
+
+                    <p
+                      className={`
+                        text-xs
+                        ${
+                          darkMode
+                            ? "text-slate-400"
+                            : "text-slate-500"
+                        }
+                      `}
+                    >
+                      Personalized instructions used only for this contact.
+                    </p>
 
                   </div>
                 )}
@@ -675,14 +887,33 @@ export default function Contacts({ contacts, setContacts, rules, setRules,showTo
                     onClick={() =>
                       setEditingContact(null)
                     }
-                    className="px-4 py-2 rounded-xl bg-slate-100"
+                    className={`
+                      px-4
+                      py-2
+                      rounded-xl
+                      transition-all
+                      ${
+                        darkMode
+                          ? "bg-[#202c33] text-slate-300 hover:bg-[#2a3942]"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }
+                    `}
                   >
                     Cancel
                   </button>
 
                   <button
                     onClick={saveEditedContact}
-                    className="px-4 py-2 rounded-xl bg-[#008069] text-white"
+                    className="
+                      px-4
+                      py-2
+                      rounded-xl
+                      bg-[#008069]
+                      hover:bg-[#006e5a]
+                      transition-colors
+                      text-white
+                      font-medium
+                    "
                   >
                     Save
                   </button>

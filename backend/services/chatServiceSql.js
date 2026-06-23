@@ -80,6 +80,22 @@ function markChatUnread(phoneNumber) {
   `).run(phoneNumber);
 }
 
+function updateContactName(
+  phoneNumber,
+  name
+) {
+
+  db.prepare(`
+    UPDATE messages
+    SET contactName = ?
+    WHERE phoneNumber = ?
+  `).run(
+    name,
+    phoneNumber
+  );
+
+}
+
 function deleteMessage(messageId) {
 
   db.prepare(`
@@ -110,6 +126,7 @@ module.exports = {
   markChatUnread,
   deleteMessage,
   messageExists,
-  getRecentMessages
+  getRecentMessages,
+  updateContactName
 
 };

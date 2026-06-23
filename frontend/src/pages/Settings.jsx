@@ -238,6 +238,54 @@ export default function Settings({ darkMode }) {
                     `}
                 placeholder="Global AI Context"
                 />
+                <div className="mt-6">
+
+                    <h3 className="font-medium mb-3">
+                        AI Personality
+                    </h3>
+
+                    <select
+                        value={settings.ai_personality}
+                        onChange={(e) =>
+                        setSettings({
+                            ...settings,
+                            ai_personality: e.target.value
+                        })
+                        }
+                        className={`
+                        w-full
+                        rounded-xl
+                        p-3
+                        border
+                        ${
+                            darkMode
+                            ? "bg-[#202c33] border-[#2a3942] text-white"
+                            : "bg-white border-slate-300"
+                        }
+                        `}
+                    >
+                        <option value="friendly">
+                        Friendly
+                        </option>
+
+                        <option value="professional">
+                        Professional
+                        </option>
+
+                        <option value="casual">
+                        Casual
+                        </option>
+
+                        <option value="formal">
+                        Formal
+                        </option>
+
+                        <option value="humorous">
+                        Humorous
+                        </option>
+                    </select>
+
+                    </div>
             </>
 
             )}
@@ -247,7 +295,20 @@ export default function Settings({ darkMode }) {
                 <h2 className="font-semibold mb-4">
                 AI Model
                 </h2>
-
+                <p
+                    className={`
+                        text-sm mt-2
+                        ${
+                        darkMode
+                            ? "text-slate-400"
+                            : "text-slate-500"
+                        }
+                    `}
+                    >
+                    Current Model:
+                    {" "}
+                    {settings.ai_model}
+                    </p>
                 <select
                 value={settings.ai_model}
                 onChange={(e) =>

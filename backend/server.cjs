@@ -10,7 +10,8 @@ const {
 const {
   deleteChat,
   markChatRead,
-  markChatUnread
+  markChatUnread,
+  updateContactName
 } = require("./services/chatServiceSql");
 const startTime = Date.now();
 
@@ -95,12 +96,37 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 
 async function generateAIReplyWithMemory(history, contactInfo) {
+  const settings =
+    getSettings();
+  const personality =
+    settings.ai_personality ||
+    "friendly";
+  const model =
+    settings.ai_model ||
+    "llama-3.1-8b-instant";
+  const memoryEnabled =
+    settings.memory_enabled === "true";
+
+  const memoryLimit =
+    Number(
+      settings.memory_limit || 10
+    );
+
+  const globalContext =
+    settings.ai_context || "";
+  
+  console.log(
+    "MODEL:",
+    model
+  );
   const completion = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+    model,
     messages: [
       {
         role: "system",
         content: `
+        ${globalContext}
+
         You are Shubhanu replying on WhatsApp.
 
         About Shubhanu:
@@ -110,10 +136,29 @@ async function generateAIReplyWithMemory(history, contactInfo) {
         - Keeps messages concise
         - Never says he is an AI
 
+        AI Personality:
+        ${personality}
+
+        Personality Rules:
+        - friendly: warm and approachable.
+        - professional: concise and business-like.
+        - casual: relaxed and conversational.
+        - formal: respectful and structured.
+        - humorous: light humor when appropriate.
         Current contact:
         Name: ${contactInfo.name}
         Relationship: ${contactInfo.relationship}
         Number: ${contactInfo.number}
+
+        Contact-specific instructions:
+        ${contactInfo.aiContext || "None"}
+
+        Rules:
+        - Follow CONTACT PROFILE instructions.
+        - CONTACT PROFILE instructions override GLOBAL CONTEXT when there is a conflict.
+        - Never invent information about the CONTACT.
+        - Only use CONTACT information provided above.
+
         Relationship guidance:
 
         - Mother/Father/Parent: Be warm, respectful and caring.
@@ -127,8 +172,10 @@ async function generateAIReplyWithMemory(history, contactInfo) {
         Reply as Shubhanu would.
         `
       },
-      ...history.slice(-12)
-    ]
+      ...(memoryEnabled
+          ? history.slice(-memoryLimit)
+          : [])
+      ]
   });
   return completion.choices[0].message.content;
 }
@@ -182,10 +229,32 @@ app.post('/allowed-contacts', (req, res) => {
 });
 
 async function generateGroqReply(message) {
+  const settings =
+    getSettings();  
+  const model =
+    settings.ai_model ||
+    "llama-3.1-8b-instant";
+  const personality =
+    settings.ai_personality ||
+    "friendly";
+  console.log(
+    "MODEL:",
+    model
+  );
   const completion = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
+    model,
     messages: [
-      { role: "system", content: "You are a helpful WhatsApp assistant. Keep replies short and friendly." },
+      {
+        role: "system",
+        content: `
+          You are a helpful WhatsApp assistant.
+
+          Personality:
+          ${personality}
+
+          Keep replies concise.
+        `
+      },
       { role: "user", content: message }
     ]
   });
@@ -214,8 +283,20 @@ app.get('/contacts', (req, res) => {
 
 app.post('/contacts', (req, res) => {
   try {
+
     saveContacts(req.body);
+
+    req.body.forEach(contact => {
+
+      updateContactName(
+        contact.phoneNumber,
+        contact.name
+      );
+
+    });
+
     res.json({ success: true });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to save contacts" });
