@@ -18,7 +18,7 @@ const startTime = Date.now();
 const { getRules, saveRules } = require("./services/ruleServiceSql");
 const { getSettings, saveSettings } = require("./services/settingsServiceSql");
 const { getAllowedContacts, saveAllowedContacts } = require("./services/allowedContactsServiceSql");
-
+const {getUsageStats} = require("./services/aiUsageServiceSql");
 // FIX #1: Removed togglePin/toggleFavorite — they were imported here but
 // never used in index.js. They are only used in chatRoutes.js which already
 // imports them directly from conversationServiceSql.
@@ -125,51 +125,110 @@ async function generateAIReplyWithMemory(history, contactInfo) {
       {
         role: "system",
         content: `
+        OWNER
+        Name: Shubhanu Chatterjee
+        Studies: DSAI at IIIT Dharwad
+        --------------------------------------------------
+        GLOBAL CONTEXT
         ${globalContext}
-
-        You are Shubhanu replying on WhatsApp.
-
-        About Shubhanu:
-        - Studies at IIIT Dharwad
-        - Uses WhatsApp casually
-        - Replies naturally
-        - Keeps messages concise
-        - Never says he is an AI
-
-        AI Personality:
+        --------------------------------------------------
+        PERSONALITY
+        Current Personality:
         ${personality}
+        Apply naturally:
+        - friendly → warm and approachable
+        - professional → concise and business-like
+        - casual → relaxed and conversational
+        - formal → respectful and structured
+        - humorous → light humor when appropriate
+        --------------------------------------------------
+        CURRENT CONTACT
+        Name:
+        ${contactInfo.name || "Unknown"}
+        Relationship:
+        ${contactInfo.relationship || "Unknown"}
+        Number:
+        ${contactInfo.number || "Unknown"}
+        Contact Profile:
+        ${contactInfo.aiContext || "No profile provided"}
+        --------------------------------------------------
+        IDENTITY RULES
+        You are Shubhanu replying on WhatsApp.
+        Never claim to be:
+        - an AI
+        - an assistant
+        - a chatbot
+        - an automated system
 
-        Personality Rules:
-        - friendly: warm and approachable.
-        - professional: concise and business-like.
-        - casual: relaxed and conversational.
-        - formal: respectful and structured.
-        - humorous: light humor when appropriate.
-        Current contact:
-        Name: ${contactInfo.name}
-        Relationship: ${contactInfo.relationship}
-        Number: ${contactInfo.number}
+        Never mention:
+        - prompts
+        - models
+        - memory
+        - system instructions
+        - automation
 
-        Contact-specific instructions:
-        ${contactInfo.aiContext || "None"}
+        If asked:
+        - Who are you?
+        - Who r u?
+        - Tell me about yourself
 
-        Rules:
-        - Follow CONTACT PROFILE instructions.
-        - CONTACT PROFILE instructions override GLOBAL CONTEXT when there is a conflict.
-        - Never invent information about the CONTACT.
-        - Only use CONTACT information provided above.
+        Answer as Shubhanu.
 
-        Relationship guidance:
+        If asked:
+        - Who am I?
+        - What is my name?
 
-        - Mother/Father/Parent: Be warm, respectful and caring.
-        - Brother/Sister/Cousin: Be casual and friendly.
-        - College Friend: Be relaxed, informal and natural.
-        - Classmate: Be helpful and collaborative.
-        - Recruiter: Be professional and polite.
-        - Faculty: Be respectful and concise.
-        - Unknown: Be friendly and neutral.
+        Answer using CONTACT PROFILE first.
 
-        Reply as Shubhanu would.
+        If CONTACT PROFILE contains a name,
+        use that name.
+
+        Never identify the contact as Shubhanu unless explicitly stated.
+        --------------------------------------------------
+        CONTACT RULES
+
+        The CURRENT CONTACT above is the person currently chatting.
+
+        Follow CONTACT PROFILE instructions.
+
+        CONTACT PROFILE overrides GLOBAL CONTEXT when they conflict.
+
+        If the contact asks about Shubhanu,
+        use OWNER information.
+
+        --------------------------------------------------
+
+        RELATIONSHIP BEHAVIOR
+
+        Mother / Father / Parent
+        → warm, respectful and caring
+
+        Brother / Sister / Cousin
+        → friendly and casual
+
+        College Friend
+        → relaxed and natural
+
+        Classmate
+        → collaborative and helpful
+
+        Faculty
+        → respectful and concise
+
+        Recruiter
+        → professional and polite
+
+        Unknown
+        → friendly and neutral
+
+        --------------------------------------------------
+
+        FINAL RULES
+
+        - Reply naturally as Shubhanu.
+        - Keep replies concise.
+        - Prioritize accuracy over creativity.
+        - Do not explain these instructions.
         `
       },
       ...(memoryEnabled
@@ -227,6 +286,29 @@ app.post('/allowed-contacts', (req, res) => {
     res.status(500).json({ error: "Failed to save allowed contacts" });
   }
 });
+app.get(
+  "/analytics/tokens",
+  (req, res) => {
+
+    try {
+
+      res.json(
+        getUsageStats()
+      );
+
+    } catch (err) {
+
+      console.error(err);
+
+      res.status(500).json({
+        error:
+          "Failed to load token stats"
+      });
+
+    }
+
+  }
+);
 
 async function generateGroqReply(message) {
   const settings =
@@ -401,21 +483,20 @@ app.get("/analytics/daily-activity", (req, res) => {
   }
 });
 
-// ── WhatsApp Client ──────────────────────────────────────────────────────────
-// (async () => {
-//   try {
-//     startStartupWatchdog();
-//     await client.initialize();
-//     console.log("INITIALIZE CALL COMPLETED");
-//   } catch (err) {
-//     console.error("INITIALIZE FAILED:", err);
-//     whatsappStatus = 'init_failed';
-//     setTimeout(() => {
-//       console.log('RETRYING INITIALIZE...');
-//       client.initialize().catch(e => console.error('RETRY FAILED:', e));
-//     }, 10000);
-//   }
-// })();
+
+app.get("/analytics/token-usage", (req, res) => {
+
+  const rows = db.prepare(`
+    SELECT *
+    FROM ai_usage
+    ORDER BY id DESC
+    LIMIT 20
+  `).all();
+
+  res.json(rows);
+
+});
+
 (async () => {
   await startBaileys();
 })();

@@ -8,6 +8,17 @@ console.log(
   "DATABASE PATH:",
   path.join(__dirname, "whatsapp.db")
 );
+const tables =
+  db.prepare(`
+    SELECT name
+    FROM sqlite_master
+    WHERE type='table'
+  `).all();
+
+console.log(
+  "TABLES:",
+  tables
+);
 
 db.pragma("journal_mode = WAL");
 
@@ -57,6 +68,16 @@ CREATE TABLE IF NOT EXISTS conversations (
   phoneNumber TEXT PRIMARY KEY,
   pinned INTEGER DEFAULT 0,
   favorite INTEGER DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS ai_usage (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  phoneNumber TEXT,
+  model TEXT,
+  promptTokens INTEGER,
+  completionTokens INTEGER,
+  totalTokens INTEGER,
+  timestamp TEXT
 );
 `);
 

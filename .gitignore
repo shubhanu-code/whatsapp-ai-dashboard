@@ -1,34 +1,44 @@
 # Dependencies
 node_modules/
-frontend/node_modules/
-backend/node_modules/
 
-# Build outputs
-dist/
-frontend/dist/
-
-# Environment files
+# Environment
 .env
 .env.local
-.env.*
-backend/.env
 
-# WhatsApp sessions
+# Logs
+*.log
+npm-debug.log*
+
+# SQLite
+*.db
+*.db-wal
+*.db-shm
+
+# Baileys Auth
+auth/
+auth/*
+backend/auth/
+backend/auth/*
+baileys_auth/
+baileys_auth/*
+
+# WhatsApp Sessions
 wa-auth/
-wa-data/
+wa-auth/*
+.wwebjs_auth/
 .wwebjs_cache/
-*.session
 
-# Runtime data
-contacts.json
-allowedContacts.json
-rules.json
-settings.json
+# Build
+dist/
+build/
 
-backend/wa-data/
-backend/wa-auth/
-
-# OS / IDE
-.vscode/
+# OS Files
 .DS_Store
 Thumbs.db
+
+# Vite
+.vite
+
+# IDE
+.vscode/
+.idea/

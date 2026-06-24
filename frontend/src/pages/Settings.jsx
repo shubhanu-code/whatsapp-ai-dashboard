@@ -3,7 +3,8 @@ import { API_BASE } from "../services/api";
 import {
   Sparkles,
   Database,
-  Layers3
+  Layers3,
+  Activity
 } from "lucide-react";
 
 
@@ -18,10 +19,32 @@ export default function Settings({ darkMode }) {
         memory_limit: 10,
         ai_model: "llama-3.1-8b-instant"
     });
+    const [tokenStats, setTokenStats] =
+        useState({
+            totalTokens: 0,
+            totalRequests: 0,
+            averageTokens: 0,
+            promptTokens: 0,
+            completionTokens: 0
+        });
 
   useEffect(() => {
+
     loadSettings();
-  }, []);
+    loadTokenStats();
+
+    }, []);
+
+
+  async function loadTokenStats() {
+    const res =
+        await fetch(
+        `${API_BASE}/analytics/tokens`
+        );
+    const data =
+        await res.json();
+    setTokenStats(data);
+    }
 
   async function loadSettings() {
 
@@ -99,7 +122,7 @@ export default function Settings({ darkMode }) {
             }
         `}
         >
-        <div className="grid md:grid-cols-3 gap-3 mb-6">
+        <div className="grid md:grid-cols-4 gap-3 mb-6">
 
             <button
                 onClick={() =>
@@ -133,6 +156,37 @@ export default function Settings({ darkMode }) {
                     </div>
                     </>
             </button>
+            <button
+        onClick={() =>
+            setActiveTab("tokens")
+        }
+        className={`
+            p-4
+            rounded-2xl
+            border
+            transition-all
+            text-left
+            ${
+            activeTab === "tokens"
+                ? "bg-[#008069] text-white border-[#008069]"
+                : darkMode
+                ? "bg-[#202c33] border-[#2a3942] hover:border-[#008069] text-white"
+                : "bg-white border-slate-200 hover:border-[#008069]"
+            }
+        `}
+        >
+        <Activity size={20} />
+
+        <div className="mt-2">
+            <div className="font-medium">
+            Tokens
+            </div>
+
+            <div className="text-xs opacity-70">
+            AI Usage
+            </div>
+        </div>
+        </button>
 
             <button
                 onClick={() =>
@@ -211,7 +265,14 @@ export default function Settings({ darkMode }) {
                         AI Context
                     </h2>
 
-                    <p className="text-sm text-slate-500">
+                    <p className={`
+                        text-sm
+                        ${
+                            darkMode
+                            ? "text-slate-400"
+                            : "text-slate-500"
+                        }
+                        `}>
                         Define the assistant's personality and behavior.
                     </p>
                 </div>
@@ -347,6 +408,192 @@ export default function Settings({ darkMode }) {
 
             )}
 
+        {activeTab === "tokens" && (
+
+            <div>
+
+                <h2 className="font-semibold mb-4">
+                Token Usage
+                </h2>
+
+                <div className="grid md:grid-cols-2 gap-4">
+
+                <div className={`
+                    rounded-xl
+                    p-4
+                    border
+                    ${
+                        darkMode
+                        ? "bg-[#202c33] border-[#2a3942]"
+                        : "bg-white border-slate-200"
+                    }
+                    `}>
+                    <div className={`
+                        text-sm
+                        ${
+                            darkMode
+                            ? "text-slate-400"
+                            : "text-slate-500"
+                        }
+                        `}>
+                    Total Tokens
+                    </div>
+
+                    <div className={`
+                        text-2xl
+                        font-bold
+                        ${
+                            darkMode
+                            ? "text-white"
+                            : "text-slate-900"
+                        }
+                        `}>
+                    {tokenStats.totalTokens?.toLocaleString()}
+                    </div>
+                </div>
+
+                <div className={`
+                    rounded-xl
+                    p-4
+                    border
+                    ${
+                        darkMode
+                        ? "bg-[#202c33] border-[#2a3942]"
+                        : "bg-white border-slate-200"
+                    }
+                    `}>
+                    <div className={`
+                        text-sm
+                        ${
+                            darkMode
+                            ? "text-slate-400"
+                            : "text-slate-500"
+                        }
+                        `}>
+                    Total Requests
+                    </div>
+
+                    <div className={`
+                        text-2xl
+                        font-bold
+                        ${
+                            darkMode
+                            ? "text-white"
+                            : "text-slate-900"
+                        }
+                        `}>
+                    {tokenStats.totalRequests}
+                    </div>
+                </div>
+
+                <div className={`
+                    rounded-xl
+                    p-4
+                    border
+                    ${
+                        darkMode
+                        ? "bg-[#202c33] border-[#2a3942]"
+                        : "bg-white border-slate-200"
+                    }
+                    `}>
+                    <div className={`
+                        text-sm
+                        ${
+                            darkMode
+                            ? "text-slate-400"
+                            : "text-slate-500"
+                        }
+                        `}>
+                    Prompt Tokens
+                    </div>
+
+                    <div className={`
+                        text-2xl
+                        font-bold
+                        ${
+                            darkMode
+                            ? "text-white"
+                            : "text-slate-900"
+                        }
+                        `}>
+                    {tokenStats.promptTokens?.toLocaleString()}
+                    </div>
+                </div>
+
+                <div className={`
+                    rounded-xl
+                    p-4
+                    border
+                    ${
+                        darkMode
+                        ? "bg-[#202c33] border-[#2a3942]"
+                        : "bg-white border-slate-200"
+                    }
+                    `}>
+                    <div className={`
+                        text-sm
+                        ${
+                            darkMode
+                            ? "text-slate-400"
+                            : "text-slate-500"
+                        }
+                        `}>
+                    Completion Tokens
+                    </div>
+
+                    <div className={`
+                        text-2xl
+                        font-bold
+                        ${
+                            darkMode
+                            ? "text-white"
+                            : "text-slate-900"
+                        }
+                        `}>
+                    {tokenStats.completionTokens?.toLocaleString()}
+                    </div>
+                </div>
+
+                <div className={`
+                    rounded-xl
+                    p-4
+                    border
+                    ${
+                        darkMode
+                        ? "bg-[#202c33] border-[#2a3942]"
+                        : "bg-white border-slate-200"
+                    }
+                    `}>
+                    <div className={`
+                        text-sm
+                        ${
+                            darkMode
+                            ? "text-slate-400"
+                            : "text-slate-500"
+                        }
+                        `}>
+                    Average / Request
+                    </div>
+
+                    <div className={`
+                        text-2xl
+                        font-bold
+                        ${
+                            darkMode
+                            ? "text-white"
+                            : "text-slate-900"
+                        }
+                        `}>
+                    {tokenStats.averageTokens}
+                    </div>
+                </div>
+
+                </div>
+
+            </div>
+
+            )}
+
       </div>
 
         {activeTab === "memory" && (
@@ -416,9 +663,10 @@ export default function Settings({ darkMode }) {
       </div>
         )}
 
-      <button
-        onClick={saveSettings}
-        className="
+      {activeTab !== "tokens" && (
+        <button
+            onClick={saveSettings}
+            className="
             bg-[#008069]
             hover:bg-[#006e5a]
             active:scale-[0.98]
@@ -431,9 +679,10 @@ export default function Settings({ darkMode }) {
             shadow-sm
             "
         >
-        Save Settings
-      </button>
-
+            Save Settings
+        </button>
+        )}
+      
     </div>
   );
 }
