@@ -4,9 +4,7 @@ const router = express.Router();
 const {
   getChats,
   deleteMessage,
-  addMessage
-} = require("../services/chatServiceSql");
-const {
+  addMessage,
   deleteChat,
   markChatRead,
   markChatUnread
@@ -15,7 +13,6 @@ const {
 const {
   togglePin,
   toggleFavorite,
-  getConversation,
   getAllConversations
 } = require(
   "../services/conversationServiceSql"
@@ -154,7 +151,9 @@ router.post("/send", async (req, res) => {
 
       timestamp: new Date().toISOString(),
 
-      read: true
+      read: true,
+
+      replySource: "manual"
     });
 
     res.json({
@@ -217,5 +216,34 @@ router.delete(
 
   }
 );
+router.delete("/:phoneNumber", (req, res) => {
+
+  deleteChat(req.params.phoneNumber);
+
+  res.json({
+    success: true
+  });
+
+});
+
+router.post("/read/:phoneNumber", (req, res) => {
+
+  markChatRead(req.params.phoneNumber);
+
+  res.json({
+    success: true
+  });
+
+});
+
+router.post("/unread/:phoneNumber", (req, res) => {
+
+  markChatUnread(req.params.phoneNumber);
+
+  res.json({
+    success: true
+  });
+
+});
 
 module.exports = router;

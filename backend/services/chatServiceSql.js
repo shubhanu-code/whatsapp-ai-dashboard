@@ -11,7 +11,12 @@ function addMessage(message) {
       message,
       direction,
       timestamp,
-      read
+      read,
+      replySource,
+      aiProvider,
+      aiModel,
+      latencyMs,
+      ruleId
     )
     VALUES (
       @id,
@@ -22,11 +27,21 @@ function addMessage(message) {
       @message,
       @direction,
       @timestamp,
-      @read
+      @read,
+      @replySource,
+      @aiProvider,
+      @aiModel,
+      @latencyMs,
+      @ruleId
     )
   `).run({
     ...message,
-    read: message.read ? 1 : 0
+    read: message.read ? 1 : 0,
+    replySource: message.replySource || null,
+    aiProvider: message.aiProvider || null,
+    aiModel: message.aiModel || null,
+    latencyMs: message.latencyMs || null,
+    ruleId: message.ruleId || null
   });
 }
 

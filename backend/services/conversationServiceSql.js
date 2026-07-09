@@ -1,44 +1,43 @@
 const db = require("../db/database");
 
 function getConversation(phoneNumber) {
-  return db.prepare(`
+  const row = db.prepare(`
     SELECT *
     FROM conversations
     WHERE phoneNumber = ?
   `).get(phoneNumber);
+
+  if (!row) return null;
+
+  return {
+    ...row,
+    pinned: Boolean(row.pinned),
+    favorite: Boolean(row.favorite)
+  };
 }
 
 function getAllConversations() {
-
   const rows = db.prepare(`
     SELECT *
     FROM conversations
   `).all();
 
   const map = {};
-
   rows.forEach(row => {
-
     map[row.phoneNumber] = {
       pinned: Boolean(row.pinned),
       favorite: Boolean(row.favorite)
     };
-
   });
 
   return map;
-
 }
 
 function ensureConversation(phoneNumber) {
-
   db.prepare(`
-    INSERT OR IGNORE INTO conversations (
-      phoneNumber
-    )
+    INSERT OR IGNORE INTO conversations (phoneNumber)
     VALUES (?)
   `).run(phoneNumber);
-
 }
 
 function togglePin(phoneNumber) {
@@ -46,10 +45,7 @@ function togglePin(phoneNumber) {
 
   db.prepare(`
     UPDATE conversations
-    SET pinned = CASE
-      WHEN pinned = 1 THEN 0
-      ELSE 1
-    END
+    SET pinned = CASE WHEN pinned = 1 THEN 0 ELSE 1 END
     WHERE phoneNumber = ?
   `).run(phoneNumber);
 
@@ -57,19 +53,15 @@ function togglePin(phoneNumber) {
 }
 
 function toggleFavorite(phoneNumber) {
-
   ensureConversation(phoneNumber);
 
   db.prepare(`
     UPDATE conversations
-    SET favorite =
-      CASE
-        WHEN favorite = 1 THEN 0
-        ELSE 1
-      END
+    SET favorite = CASE WHEN favorite = 1 THEN 0 ELSE 1 END
     WHERE phoneNumber = ?
   `).run(phoneNumber);
 
+  return getConversation(phoneNumber);
 }
 
 module.exports = {

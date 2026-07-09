@@ -43,7 +43,12 @@ CREATE TABLE IF NOT EXISTS messages (
   message TEXT,
   direction TEXT,
   timestamp TEXT,
-  read INTEGER DEFAULT 0
+  read INTEGER DEFAULT 0,
+  replySource TEXT,
+  aiProvider TEXT,
+  aiModel TEXT,
+  latencyMs INTEGER,
+  ruleId TEXT
 );
 
 CREATE TABLE IF NOT EXISTS rules (
@@ -74,12 +79,40 @@ CREATE TABLE IF NOT EXISTS ai_usage (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   phoneNumber TEXT,
   model TEXT,
+  provider TEXT,
   promptTokens INTEGER,
   completionTokens INTEGER,
   totalTokens INTEGER,
+  latencyMs INTEGER,
   timestamp TEXT
 );
 `);
+
+function addColumnIfMissing(tableName, columnName, definition) {
+  const columns = db
+    .prepare(`PRAGMA table_info(${tableName})`)
+    .all()
+    .map(column => column.name);
+
+  if (!columns.includes(columnName)) {
+    db.prepare(`
+      ALTER TABLE ${tableName}
+      ADD COLUMN ${columnName} ${definition}
+    `).run();
+  }
+}
+
+[
+  ["messages", "replySource", "TEXT"],
+  ["messages", "aiProvider", "TEXT"],
+  ["messages", "aiModel", "TEXT"],
+  ["messages", "latencyMs", "INTEGER"],
+  ["messages", "ruleId", "TEXT"],
+  ["ai_usage", "provider", "TEXT"],
+  ["ai_usage", "latencyMs", "INTEGER"]
+].forEach(([tableName, columnName, definition]) => {
+  addColumnIfMissing(tableName, columnName, definition);
+});
 
 try {
 

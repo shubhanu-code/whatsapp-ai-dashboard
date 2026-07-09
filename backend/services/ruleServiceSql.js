@@ -15,48 +15,36 @@ function getRules() {
 }
 
 function saveRules(rules) {
+  const clear = db.prepare("DELETE FROM rules");
 
-  const clear =
-    db.prepare(
-      "DELETE FROM rules"
-    );
+  const insert = db.prepare(`
+    INSERT INTO rules (
+      id,
+      keyword,
+      matchType,
+      targetContact,
+      reply,
+      isActive
+    )
+    VALUES (
+      @id,
+      @keyword,
+      @matchType,
+      @targetContact,
+      @reply,
+      @isActive
+    )
+  `);
 
-  const insert =
-    db.prepare(`
-      INSERT INTO rules (
-        id,
-        keyword,
-        matchType,
-        targetContact,
-        reply,
-        isActive
-      )
-      VALUES (
-        @id,
-        @keyword,
-        @matchType,
-        @targetContact,
-        @reply,
-        @isActive
-      )
-    `);
-
-  const transaction =
-    db.transaction(data => {
-
-      clear.run();
-
-      for (const rule of data) {
-
-        insert.run({
-          ...rule,
-          isActive:
-            rule.isActive ? 1 : 0
-        });
-
-      }
-
-    });
+  const transaction = db.transaction(data => {
+    clear.run();
+    for (const rule of data) {
+      insert.run({
+        ...rule,
+        isActive: rule.isActive ? 1 : 0
+      });
+    }
+  });
 
   transaction(rules);
 }
