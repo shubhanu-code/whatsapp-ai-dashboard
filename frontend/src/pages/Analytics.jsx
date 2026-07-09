@@ -38,11 +38,11 @@ const DEFAULT_AI_ANALYTICS = {
 };
 
 // ── Reusable stat card ──────────────────────────────────────────────────────
-function StatCard({ label, value, color }) {
+function StatCard({ label, value, color, darkMode }) {
   return (
     <div className={`p-5 rounded-xl ${color}`}>
-      <div className="text-sm opacity-70">{label}</div>
-      <div className="text-3xl font-bold">{value}</div>
+      <div className={`text-sm opacity-70 ${darkMode ? "text-white" : "text-slate-800"}`}>{label}</div>
+      <div className={`text-3xl font-bold ${darkMode ? "text-white" : "text-slate-900"}`}>{value}</div>
     </div>
   );
 }
@@ -57,7 +57,7 @@ function ProgressBar({ percent, color, darkMode }) {
     >
       <div
         className={`h-full ${color}`}
-        style={{ width: `${percent}%` }}
+        style={{ width: `${Math.min(Math.max(percent, 0), 100)}%` }}
       />
     </div>
   );
@@ -68,7 +68,7 @@ function Section({ darkMode, className = "", children }) {
   return (
     <div
       className={`mt-6 rounded-xl p-5 ${
-        darkMode ? "bg-[#202c33]" : "bg-white"
+        darkMode ? "bg-[#202c33] text-white" : "bg-white text-slate-800"
       } ${className}`}
     >
       {children}
@@ -90,6 +90,7 @@ export default function Analytics({ darkMode }) {
   const [aiAnalytics, setAIAnalytics] = useState(DEFAULT_AI_ANALYTICS);
 
   useEffect(() => {
+    let isMounted = true;
     const loadAnalytics = async () => {
       try {
         const [
@@ -124,88 +125,68 @@ export default function Analytics({ darkMode }) {
           breakdownRes.json(),
         ]);
 
-        setAnalytics(data);
-        setTopContacts(contactsData);
-        setPeakHours(peakData);
-        setAIAnalytics(aiData);
-        setDailyActivity([...dailyData].reverse());
-        setBreakdown(breakdownData);
+        if (isMounted) {
+          setAnalytics(data || { messagesSent: 0, messagesReceived: 0, totalContacts: 0, activeRules: 0 });
+          setTopContacts(contactsData || []);
+          setPeakHours(peakData || []);
+          setAIAnalytics(aiData || DEFAULT_AI_ANALYTICS);
+          setDailyActivity(dailyData ? [...dailyData].reverse() : []);
+          setBreakdown(breakdownData || { incoming: 0, outgoing: 0 });
+        }
       } catch (err) {
         console.error("Failed to load analytics:", err);
       }
     };
 
     loadAnalytics();
+    return () => { isMounted = false; };
   }, []);
 
   // ── Derived values ────────────────────────────────────────────────────────
-  const totalMessages = breakdown.incoming + breakdown.outgoing;
-  const incomingPercent =
-    totalMessages === 0 ? 0 : (breakdown.incoming / totalMessages) * 100;
-  const outgoingPercent =
-    totalMessages === 0 ? 0 : (breakdown.outgoing / totalMessages) * 100;
+  const totalMessages = (breakdown?.incoming || 0) + (breakdown?.outgoing || 0);
+  const incomingPercent = totalMessages === 0 ? 0 : ((breakdown?.incoming || 0) / totalMessages) * 100;
+  const outgoingPercent = totalMessages === 0 ? 0 : ((breakdown?.outgoing || 0) / totalMessages) * 100;
 
   const maxContactMessages = topContacts[0]?.totalMessages || 1;
-  const maxAITokens = aiAnalytics.topContacts[0]?.totalTokens || 1;
+  const maxAITokens = aiAnalytics?.topContacts?.[0]?.totalTokens || 1;
 
   return (
-    <div>
+    <div className={darkMode ? "text-white" : "text-slate-900"}>
       {/* ── Page title ────────────────────────────────────────────────────── */}
-      <h1
-        className={`text-2xl font-bold mb-6 ${
-          darkMode ? "text-white" : "text-slate-800"
-        }`}
-      >
+      <h1 className={`text-2xl font-bold mb-6 ${darkMode ? "text-white" : "text-slate-800"}`}>
         Analytics
       </h1>
 
       {/* ── Overview stat cards ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard
-          label="Messages Sent"
-          value={analytics.messagesSent}
-          color="bg-[#25D366]/10"
-        />
-        <StatCard
-          label="Messages Received"
-          value={analytics.messagesReceived}
-          color="bg-blue-500/10"
-        />
-        <StatCard
-          label="Contacts"
-          value={analytics.totalContacts}
-          color="bg-orange-500/10"
-        />
-        <StatCard
-          label="Active Rules"
-          value={analytics.activeRules}
-          color="bg-purple-500/10"
-        />
+        <StatCard label="Messages Sent" value={analytics.messagesSent} color="bg-[#25D366]/10" darkMode={darkMode} />
+        <StatCard label="Messages Received" value={analytics.messagesReceived} color="bg-blue-500/10" darkMode={darkMode} />
+        <StatCard label="Contacts" value={analytics.totalContacts} color="bg-orange-500/10" darkMode={darkMode} />
+        <StatCard label="Active Rules" value={analytics.activeRules} color="bg-purple-500/10" darkMode={darkMode} />
       </div>
 
       {/* ── Top Contacts ──────────────────────────────────────────────────── */}
       <Section darkMode={darkMode}>
         <h2 className="text-lg font-semibold mb-4">Top Contacts</h2>
-
         <div className="space-y-4">
-          {topContacts.map((contact, index) => (
-            <div key={index}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#25D366]/20 flex items-center justify-center font-bold">
-                    {contact.contactName?.[0] ?? "?"}
+          {topContacts.length === 0 ? <p className="text-sm opacity-50">No contact data available</p> : 
+            topContacts.map((contact, index) => (
+              <div key={`contact-${index}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#25D366]/20 flex items-center justify-center font-bold">
+                      {contact.contactName?.[0] ?? "?"}
+                    </div>
+                    <span>{contact.contactName || "Unknown"}</span>
                   </div>
-                  <span>{contact.contactName}</span>
+                  <span className="font-bold">{contact.totalMessages}</span>
                 </div>
-                <span className="font-bold">{contact.totalMessages}</span>
+                <ProgressBar
+                  percent={((contact.totalMessages || 0) / maxContactMessages) * 100}
+                  color="bg-[#25D366]"
+                  darkMode={darkMode}
+                />
               </div>
-
-              <ProgressBar
-                percent={(contact.totalMessages / maxContactMessages) * 100}
-                color="bg-[#25D366]"
-                darkMode={darkMode}
-              />
-            </div>
           ))}
         </div>
       </Section>
@@ -213,93 +194,54 @@ export default function Analytics({ darkMode }) {
       {/* ── Message Breakdown ─────────────────────────────────────────────── */}
       <Section darkMode={darkMode}>
         <h2 className="text-lg font-semibold mb-4">Message Breakdown</h2>
-
         <div className="mb-2 flex justify-between">
           <span>Incoming</span>
-          <span>{breakdown.incoming}</span>
+          <span>{breakdown?.incoming || 0}</span>
         </div>
-        <ProgressBar
-          percent={incomingPercent}
-          color="bg-blue-500"
-          darkMode={darkMode}
-        />
+        <ProgressBar percent={incomingPercent} color="bg-blue-500" darkMode={darkMode} />
 
         <div className="mt-5 mb-2 flex justify-between">
           <span>Outgoing</span>
-          <span>{breakdown.outgoing}</span>
+          <span>{breakdown?.outgoing || 0}</span>
         </div>
-        <ProgressBar
-          percent={outgoingPercent}
-          color="bg-[#25D366]"
-          darkMode={darkMode}
-        />
+        <ProgressBar percent={outgoingPercent} color="bg-[#25D366]" darkMode={darkMode} />
       </Section>
 
       {/* ── Peak Hours chart ──────────────────────────────────────────────── */}
       <Section darkMode={darkMode}>
         <h2 className="text-lg font-semibold mb-4">Peak Hours</h2>
-
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart
-            data={peakHours}
-            margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis
-              dataKey="hour"
-              tickFormatter={(hour) => `${hour}:00`}
-            />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip />
-            <Bar
-              dataKey="total"
-              fill="#25D366"
-              radius={[10, 10, 0, 0]}
-              barSize={24}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        <div style={{ width: "100%", height: 300 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={peakHours} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} tick={{ fill: darkMode ? "#fff" : "#475569" }} />
+              <YAxis tick={{ fontSize: 12, fill: darkMode ? "#fff" : "#475569" }} />
+              <Tooltip contentStyle={{ backgroundColor: darkMode ? "#1f2937" : "#fff", color: darkMode ? "#fff" : "#000" }} />
+              <Bar key="peak-hours-bar" dataKey="total" fill="#25D366" radius={[10, 10, 0, 0]} barSize={24} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </Section>
 
       {/* ── Daily Activity chart ──────────────────────────────────────────── */}
       <Section darkMode={darkMode}>
         <h2 className="text-lg font-semibold mb-4">Daily Activity</h2>
-
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart
-            data={dailyActivity}
-            margin={{ top: 10, right: 20, left: 0, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-            <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="total"
-              stroke="#25D366"
-              strokeWidth={3}
-              dot={{ r: 4, fill: "#25D366" }}
-              activeDot={{ r: 7 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div style={{ width: "100%", height: 300 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={dailyActivity} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis dataKey="day" tick={{ fontSize: 12, fill: darkMode ? "#fff" : "#475569" }} />
+              <YAxis tick={{ fontSize: 12, fill: darkMode ? "#fff" : "#475569" }} />
+              <Tooltip contentStyle={{ backgroundColor: darkMode ? "#1f2937" : "#fff", color: darkMode ? "#fff" : "#000" }} />
+              <Line key="daily-activity-line" type="monotone" dataKey="total" stroke="#25D366" strokeWidth={3} dot={{ r: 4, fill: "#25D366" }} activeDot={{ r: 7 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </Section>
 
       {/* ── AI Analytics panel ────────────────────────────────────────────── */}
-      <div
-        className={`mt-10 rounded-3xl border overflow-hidden ${
-          darkMode
-            ? "bg-[#111b21] border-[#202c33]"
-            : "bg-white border-slate-200"
-        }`}
-      >
-        {/* Header */}
-        <div
-          className={`px-8 py-6 border-b ${
-            darkMode ? "border-[#202c33]" : "border-slate-200"
-          }`}
-        >
+      <div className={`mt-10 rounded-3xl border overflow-hidden ${darkMode ? "bg-[#111b21] border-[#202c33]" : "bg-white border-slate-200"}`}>
+        <div className={`px-8 py-6 border-b ${darkMode ? "border-[#202c33]" : "border-slate-200"}`}>
           <h2 className="text-2xl font-bold">AI Analytics</h2>
           <p className={`mt-1 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
             Monitor AI usage, token consumption, model usage and contact insights.
@@ -307,68 +249,34 @@ export default function Analytics({ darkMode }) {
         </div>
 
         <div className="p-8">
-          {/* AI overview stat cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
-            <StatCard
-              label="AI Requests"
-              value={aiAnalytics.overview.totalRequests}
-              color="bg-cyan-500/10"
-            />
-            <StatCard
-              label="Total Tokens"
-              value={aiAnalytics.overview.totalTokens}
-              color="bg-green-500/10"
-            />
-            <StatCard
-              label="Avg / Reply"
-              value={aiAnalytics.overview.averageTokens}
-              color="bg-orange-500/10"
-            />
-            <StatCard
-              label="Models Used"
-              value={aiAnalytics.overview.modelsUsed}
-              color="bg-purple-500/10"
-            />
+            <StatCard label="AI Requests" value={aiAnalytics.overview?.totalRequests || 0} color="bg-cyan-500/10" darkMode={darkMode} />
+            <StatCard label="Total Tokens" value={aiAnalytics.overview?.totalTokens || 0} color="bg-green-500/10" darkMode={darkMode} />
+            <StatCard label="Avg / Reply" value={aiAnalytics.overview?.averageTokens || 0} color="bg-orange-500/10" darkMode={darkMode} />
+            <StatCard label="Models Used" value={aiAnalytics.overview?.modelsUsed || 0} color="bg-purple-500/10" darkMode={darkMode} />
           </div>
 
-          {/* AI Health */}
-          <div
-            className={`mt-8 rounded-2xl border p-6 ${
-              darkMode
-                ? "bg-[#202c33] border-[#2a3942]"
-                : "bg-slate-50 border-slate-200"
-            }`}
-          >
+          <div className={`mt-8 rounded-2xl border p-6 ${darkMode ? "bg-[#202c33] border-[#2a3942]" : "bg-slate-50 border-slate-200"}`}>
             <div className="flex justify-between items-center">
               <div>
                 <div className="text-lg font-semibold">AI Health</div>
-                <div className={`mt-1 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                  System operating normally.
-                </div>
+                <div className={`mt-1 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>System operating normally.</div>
               </div>
-              <div className="text-green-500 font-semibold">
-                {aiAnalytics.aiHealth?.status || "Loading"}
-              </div>
+              <div className="text-green-500 font-semibold">{aiAnalytics.aiHealth?.status || "Healthy"}</div>
             </div>
 
             <div className="grid grid-cols-3 gap-6 mt-6">
               <div>
                 <div className="text-xs text-slate-500">Requests</div>
-                <div className="text-xl font-semibold">
-                  {aiAnalytics.overview.totalRequests}
-                </div>
+                <div className="text-xl font-semibold">{aiAnalytics.overview?.totalRequests || 0}</div>
               </div>
               <div>
                 <div className="text-xs text-slate-500">Prompt Efficiency</div>
-                <div className="text-xl font-semibold">
-                  {aiAnalytics.aiHealth?.efficiency ?? 0}%
-                </div>
+                <div className="text-xl font-semibold">{aiAnalytics.aiHealth?.efficiency ?? 0}%</div>
               </div>
               <div>
                 <div className="text-xs text-slate-500">Active Models</div>
-                <div className="text-xl font-semibold">
-                  {aiAnalytics.aiHealth?.activeModels ?? 0}
-                </div>
+                <div className="text-xl font-semibold">{aiAnalytics.aiHealth?.activeModels ?? 0}</div>
               </div>
             </div>
           </div>
@@ -378,133 +286,74 @@ export default function Analytics({ darkMode }) {
           {/* Token Breakdown */}
           <div className="mb-8">
             <h3 className="text-xl font-semibold">Token Breakdown</h3>
-            <p className={`mt-1 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-              Distribution of prompt and completion tokens.
-            </p>
-
+            <p className={`mt-1 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>Distribution of prompt and completion tokens.</p>
             <div className="space-y-6 mt-4">
               <div>
                 <div className="flex justify-between mb-2">
                   <span>Prompt Tokens</span>
-                  <span>{aiAnalytics.tokenBreakdown.promptPercent}%</span>
+                  <span>{aiAnalytics.tokenBreakdown?.promptPercent || 0}%</span>
                 </div>
-                <ProgressBar
-                  percent={aiAnalytics.tokenBreakdown.promptPercent}
-                  color="bg-[#25D366]"
-                  darkMode={darkMode}
-                />
+                <ProgressBar percent={aiAnalytics.tokenBreakdown?.promptPercent || 0} color="bg-[#25D366]" darkMode={darkMode} />
                 <div className={`mt-2 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                  {(aiAnalytics.tokenBreakdown.promptTokens ?? 0).toLocaleString()} tokens
+                  {(aiAnalytics.tokenBreakdown?.promptTokens ?? 0).toLocaleString()} tokens
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between mb-2">
                   <span>Completion Tokens</span>
-                  <span>{aiAnalytics.tokenBreakdown.completionPercent ?? 0}%</span>
+                  <span>{aiAnalytics.tokenBreakdown?.completionPercent || 0}%</span>
                 </div>
-                <ProgressBar
-                  percent={aiAnalytics.tokenBreakdown.completionPercent ?? 0}
-                  color="bg-blue-500"
-                  darkMode={darkMode}
-                />
+                <ProgressBar percent={aiAnalytics.tokenBreakdown?.completionPercent || 0} color="bg-blue-500" darkMode={darkMode} />
                 <div className={`mt-2 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                  {(aiAnalytics.tokenBreakdown.completionTokens ?? 0).toLocaleString()} tokens
+                  {(aiAnalytics.tokenBreakdown?.completionTokens ?? 0).toLocaleString()} tokens
                 </div>
               </div>
             </div>
           </div>
 
           {/* Top AI Contacts */}
-          <div
-            className={`mt-8 rounded-2xl p-6 ${
-              darkMode ? "bg-[#202c33]" : "bg-white"
-            }`}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-xl font-semibold">Top AI Contacts</h3>
-                <p className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                  Contacts consuming the most AI resources
-                </p>
-              </div>
-            </div>
+          <div className={`mt-8 rounded-2xl p-6 ${darkMode ? "bg-[#202c33]" : "bg-white"}`}>
+            <h3 className="text-xl font-semibold">Top AI Contacts</h3>
+            <p className={`text-sm mb-6 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>Contacts consuming the most AI resources</p>
 
             <div className="space-y-4">
-              {aiAnalytics.topContacts.map((contact) => (
-                <div
-                  key={contact.phoneNumber}
-                  className={`rounded-xl border p-5 ${
-                    darkMode
-                      ? "border-[#2a3942] bg-[#111b21]"
-                      : "border-slate-200 bg-slate-50"
-                  }`}
-                >
-                  {/* Contact header */}
-                  <div className="flex justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-[#25D366]/15 flex items-center justify-center">
-                        <UserRound size={22} className="text-[#25D366]" />
-                      </div>
-                      <div>
-                        <div className="font-semibold text-lg">{contact.name}</div>
-                        <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                          {contact.relationship}
+              {aiAnalytics.topContacts?.length === 0 ? <p className="text-sm opacity-50">No AI data recorded for contacts.</p> : 
+                aiAnalytics.topContacts?.map((contact) => (
+                  <div key={contact.phoneNumber || contact.name} className={`rounded-xl border p-5 ${darkMode ? "border-[#2a3942] bg-[#111b21]" : "border-slate-200 bg-slate-50"}`}>
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-[#25D366]/15 flex items-center justify-center">
+                          <UserRound size={22} className="text-[#25D366]" />
+                        </div>
+                        <div>
+                          <div className="font-semibold text-lg">{contact.name || "Unknown"}</div>
+                          <div className={`text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>{contact.relationship || "Contact"}</div>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="text-right">
-                      <div
-                        className={`text-3xl font-bold ${
-                          darkMode ? "text-white" : "text-slate-900"
-                        }`}
-                      >
-                        {contact.totalTokens.toLocaleString()}
-                      </div>
-                      <div
-                        className={`text-xs font-medium uppercase tracking-wider ${
-                          darkMode ? "text-slate-500" : "text-slate-400"
-                        }`}
-                      >
-                        Total Tokens
+                      <div className="text-right">
+                        <div className={`text-3xl font-bold ${darkMode ? "text-white" : "text-slate-900"}`}>{(contact.totalTokens || 0).toLocaleString()}</div>
+                        <div className={`text-xs font-medium uppercase tracking-wider ${darkMode ? "text-slate-500" : "text-slate-400"}`}>Total Tokens</div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Token usage bar */}
-                  <div className="mt-6">
-                    <ProgressBar
-                      percent={(contact.totalTokens / maxAITokens) * 100}
-                      color="bg-[#25D366]"
-                      darkMode={darkMode}
-                    />
-                  </div>
-
-                  {/* Contact stats */}
-                  <div className="grid grid-cols-3 gap-8 mt-6">
-                    <div>
-                      <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                        Requests
-                      </div>
-                      <div className="font-semibold">{contact.requests}</div>
+                    <div className="mt-6">
+                      <ProgressBar percent={((contact.totalTokens || 0) / maxAITokens) * 100} color="bg-[#25D366]" darkMode={darkMode} />
                     </div>
-                    <div>
-                      <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                        Avg Tokens
+                    <div className="grid grid-cols-3 gap-8 mt-6">
+                      <div>
+                        <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>Requests</div>
+                        <div className="font-semibold">{contact.requests || 0}</div>
                       </div>
-                      <div className="font-semibold">{contact.averageTokens}</div>
-                    </div>
-                    <div>
-                      <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-                        Prompt Tokens
+                      <div>
+                        <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>Avg Tokens</div>
+                        <div className="font-semibold">{contact.averageTokens || 0}</div>
                       </div>
-                      <div className="font-semibold">
-                        {contact.promptTokens.toLocaleString()}
+                      <div>
+                        <div className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>Prompt Tokens</div>
+                        <div className="font-semibold">{(contact.promptTokens || 0).toLocaleString()}</div>
                       </div>
                     </div>
                   </div>
-                </div>
               ))}
             </div>
           </div>

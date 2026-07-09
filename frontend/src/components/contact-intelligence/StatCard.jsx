@@ -1,3 +1,15 @@
+import React from "react";
+
+// Move mappings outside component to prevent reference generation on every render pass
+const TONE_CLASSES = {
+  emerald: { icon: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/15" },
+  blue:    { icon: "text-blue-600 dark:text-blue-400",       bg: "bg-blue-500/15" },
+  amber:   { icon: "text-amber-600 dark:text-amber-400",     bg: "bg-amber-500/15" },
+  violet:  { icon: "text-violet-600 dark:text-violet-400",   bg: "bg-violet-500/15" },
+  rose:    { icon: "text-rose-600 dark:text-rose-400",       bg: "bg-rose-500/15" },
+  cyan:    { icon: "text-cyan-600 dark:text-cyan-400",       bg: "bg-cyan-500/15" },
+};
+
 export default function StatCard({
   label,
   value,
@@ -6,14 +18,7 @@ export default function StatCard({
   darkMode,
   tone = "emerald",
 }) {
-  const tones = {
-    emerald: "text-emerald-600 bg-emerald-500/15",
-    blue: "text-blue-600 bg-blue-500/15",
-    amber: "text-amber-600 bg-amber-500/15",
-    violet: "text-violet-600 bg-violet-500/15",
-    rose: "text-rose-600 bg-rose-500/15",
-    cyan: "text-cyan-600 bg-cyan-500/15",
-  };
+  const currentTone = TONE_CLASSES[tone] || TONE_CLASSES.emerald;
 
   return (
     <div
@@ -23,10 +28,13 @@ export default function StatCard({
           : "bg-white border-slate-200 hover:border-[#25D366]/40"
       }`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col justify-between">
+      {/* Ensure parent container hides or wraps overflow cleanly */}
+      <div className="flex items-start justify-between gap-2 min-w-0">
+        
+        {/* Added min-w-0 so text block container can contract in tight grids */}
+        <div className="flex flex-col justify-between min-w-0">
           <div
-            className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
+            className={`text-[11px] font-semibold uppercase tracking-[0.18em] truncate ${
               darkMode ? "text-slate-500" : "text-slate-400"
             }`}
           >
@@ -34,7 +42,7 @@ export default function StatCard({
           </div>
 
           <div
-            className={`mt-3 text-3xl font-bold leading-none transition-all duration-300 ${
+            className={`mt-3 text-3xl font-bold leading-none transition-all duration-300 truncate ${
               darkMode
                 ? "text-white group-hover:text-[#25D366]"
                 : "text-slate-900 group-hover:text-[#008069]"
@@ -46,35 +54,21 @@ export default function StatCard({
 
         {Icon && (
           <div
-            className={`
-              rounded-xl
-              p-3
-              transition-all
-              duration-300
-              group-hover:scale-110
-              ${tones[tone] || tones.emerald}
-            `}
+            className={`rounded-xl p-3 transition-all duration-300 group-hover:scale-110 shrink-0 ${currentTone.bg} ${currentTone.icon}`}
           >
             <Icon size={20} strokeWidth={2.2} />
           </div>
         )}
       </div>
 
+      {/* Hint tracking section remains untouched */}
       {hint && (
         <div
-          className={`
-            mt-5
-            pt-4
-            border-t
-            transition-colors
-            ${
-              darkMode
-                ? "border-[#202c33] text-slate-400"
-                : "border-slate-100 text-slate-500"
-            }
-          `}
+          className={`mt-5 pt-4 border-t transition-colors ${
+            darkMode ? "border-[#202c33] text-slate-400" : "border-slate-100 text-slate-500"
+          }`}
         >
-          <span className="text-xs font-medium tracking-wide">
+          <span className="text-xs font-medium tracking-wide block truncate">
             {hint}
           </span>
         </div>

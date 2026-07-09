@@ -1,251 +1,166 @@
-# WhatsApp AI Auto-Reply Dashboard
+# WhatsApp AI Auto-Reply Platform
 
-A full-stack WhatsApp automation platform that combines AI-powered conversations, rule-based automation, and contact management through a custom-built dashboard.
+A full stack project where I built an AI powered WhatsApp automation system using Baileys, Groq AI, SQLite and React. Basically it connects to your WhatsApp and can auto reply to messages using rules or AI, and you get a whole dashboard to manage everything.
 
-## Overview
+Started this as a simple auto-reply bot but ended up adding a lot more stuff like memory, contact based AI personalities, analytics etc. Still improving it whenever I get time.
 
-This project integrates WhatsApp Web automation with Groq AI to create an intelligent auto-reply assistant. It provides a modern dashboard for managing contacts, automation rules, AI reply modes, and conversation testing while maintaining full control over who the bot can interact with.
+## What it does
 
-## Features
+- Connects to WhatsApp using Baileys (multi device support)
+- Auto replies using either rules, AI, or both (rules first then AI fallback)
+- Remembers past conversations so AI replies feel more natural
+- Every contact can have its own AI personality/context (like different tone for friends vs recruiters)
+- Has an inbox similar to actual WhatsApp
+- Analytics page to see stats about messages, AI usage, tokens, cost etc
+- Can test everything in a simulator without touching real WhatsApp
 
-### WhatsApp Automation
+## Features (in more detail)
 
-* WhatsApp Web integration using whatsapp-web.js
-* Persistent LocalAuth session management
-* Automatic session recovery and reconnection handling
-* Allowed contacts whitelist system
-* Contact-based bot enable/disable controls
+### WhatsApp
+- QR code pairing
+- Auto reconnect if disconnected
+- Syncs old messages/contacts on startup
+- Handles incoming/outgoing messages in real time
+- Prevents duplicate messages (this was annoying to fix)
 
-### AI-Powered Replies
+### AI
+- Uses Groq API (Llama models)
+- 3 modes: AI only, Rules only, Smart (rules first, AI fallback)
+- Global AI personality + per contact personality
+- You can set temperature and other params from settings
 
-* Groq AI integration
-* AI-only response mode
-* Smart Mode (Rules → AI fallback)
-* Context-aware conversation memory
-* Relationship-aware contact metadata
+### Memory
+- AI remembers previous chats
+- Can turn memory on/off
+- Configurable how much memory to keep
+- Can view memory for each contact
 
-### Rule Engine
+### Contact Intelligence
+- Each contact has fields like relationship (friend, family, recruiter, faculty, client etc), notes, custom AI context
+- Helps AI reply differently based on who it's talking to
 
-* Keyword-based auto replies
-* Exact match and contains match modes
-* Contact-specific rules
-* Global rules for all contacts
-* Enable/disable rules individually
-* Real-time rule management dashboard
+### Rules Engine
+- Keyword based, exact match, contains match
+- Can be global or contact specific
+- Enable/disable individual rules
 
-### Advanced Contact Management
+### Inbox
+- Search, pin, favorite chats
+- Read/unread status
+- Delete messages/conversations
+- Typing indicator simulation
+- Shift+Enter for new line
 
-* Create, edit, and delete contacts
-* Relationship classification
+### Analytics
+Basic stuff like:
+- total conversations, messages sent/received
+- AI replies vs rule replies
+- peak hours, daily/weekly trends
+- top contacts
+- AI stuff: tokens used, cost estimate, response time, success rate
 
-  * Mother
-  * Father
-  * Brother
-  * Sister
-  * College Friend
-  * Classmate
-  * Faculty
-  * Recruiter
-* Bot access management
-* Auto-discovered WhatsApp contacts
-* Contact status tracking
-
-  * Manual
-  * Needs Linking
-  * Linked
-
-### Contact Linking System
-
-* Manual contact creation
-* Automatic WhatsApp contact discovery
-* Link WhatsApp identities to existing contacts
-* Unlink contacts when incorrect matches occur
-* WhatsApp identity preservation during linking/unlinking
-* Duplicate contact prevention
-
-### Dashboard Experience
-
-* WhatsApp-inspired UI
-* Contact editing modal
-* Contact linking modal
-* Contact unlink confirmation modal
-* Real-time toast notification system
-* Responsive desktop/mobile layout
-* Chat simulator for testing workflows
-
-### Testing Tools
-
-* Built-in chat simulator
-* Simulate conversations from different contacts
-* Test rules without using WhatsApp
-* Validate AI responses before deployment
+### Simulator
+Lets me test rules/AI/memory without actually sending real WhatsApp messages. Really useful for debugging.
 
 ## Tech Stack
 
-### Frontend
+**Frontend:** React, Vite, Tailwind CSS, Lucide Icons, Recharts
 
-* React
-* Vite
-* Tailwind CSS
-* Lucide React
+**Backend:** Node.js, Express, Baileys, Groq SDK, Better SQLite3
 
-### Backend
+**Database:** SQLite (moved from just storing stuff in JSON files earlier, way better now for analytics and queries)
 
-* Node.js
-* Express
-* Groq SDK
-* whatsapp-web.js
+## How it's structured
 
-## Why I Built This
+```
+frontend/
+    components/
+        Analytics/
+        Contacts/
+        Inbox/
+        Rules/
+        Settings/
+        Simulator/
+        Overview/
 
-I wanted to explore how AI assistants can be integrated into messaging platforms while still providing fine-grained control over automation. The project helped me gain experience with:
-
-* AI integrations
-* Full-stack development
-* State management
-* WhatsApp automation
-* Session persistence
-* Contact identity management
-* Real-time dashboard design
-
-## Challenges Solved
-
-### WhatsApp Session Reliability
-
-* LocalAuth corruption handling
-* Session recovery mechanisms
-* Startup health checks
-* Ready-state detection improvements
-
-### Contact Identity Management
-
-* Handling WhatsApp LID identifiers
-* Contact linking and unlinking workflows
-* Duplicate prevention
-* Contact relationship mapping
-
-### Automation Architecture
-
-* Rule-based response engine
-* AI fallback system
-* Contact-level permissions
-* Synchronization between frontend and backend
-
-### User Experience
-
-* Custom modal workflows
-* Toast notification system
-* Responsive dashboard design
-* WhatsApp-style chat simulation
-
-## Future Improvements
-
-* Persistent database storage (MongoDB/PostgreSQL)
-* Contact notes and AI personalization
-* Search and filtering for contacts
-* Message scheduling
-* Media and file responses
-* Conversation history viewer
-* Analytics dashboard
-* Role-based access control
-* Docker deployment
-* Cloud hosting support
-
-## Screenshots
-
-### Dashboard
-
-![Dashboard](screenshots/overview.png)
-
-### Contact Management
-
-![Contacts](screenshots/contacts.png)
-
-### Rules Engine
-
-![Rules](screenshots/Auto-reply-rules.png)
-
-### Chat Simulator
-
-![Simulator](screenshots/chat-simulator.png)
-
-## Getting Started
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/whatsapp-dashboard.git
-cd whatsapp-dashboard
+backend/
+    services/
+    repositories/
+    database/
+    routes/
+    utils/
+    baileys/
 ```
 
-### 2. Install Dependencies
+Basic flow:
 
+```
+React Dashboard -> Express API -> SQLite DB / Groq AI / Baileys (WhatsApp)
+```
+
+## Problems I ran into
+
+- Baileys would randomly disconnect, had to add reconnect logic
+- Duplicate messages were getting processed twice, took a while to fix
+- Started with JSON file storage which got messy fast, migrated everything to SQLite
+- Making the AI remember context without blowing up token usage was tricky
+- Dashboard was laggy at first with big chat lists so added skeleton loaders and lazy loading
+
+## Roadmap
+
+**Done:**
+- WhatsApp integration + rules + AI replies
+- Contact management + inbox + dashboard
+- SQLite migration
+- Analytics + AI memory + contact intelligence
+- AI usage tracking
+
+**Working on:**
+- RAG based knowledge base (file uploads, semantic search)
+
+**Planned:**
+- Multi user accounts + auth + teams
+- Docker/deployment stuff eventually
+
+## Setup
+
+Clone the repo:
+```bash
+git clone https://github.com/YOUR_USERNAME/whatsapp-ai-dashboard.git
+cd whatsapp-ai-dashboard
+```
+
+Install dependencies:
 ```bash
 npm install
 ```
 
-### 3. Create Environment Variables
-
 Create a `.env` file:
-
 ```env
-GROQ_API_KEY=your_groq_api_key
-
-DATA_DIR=C:/Users/YOUR_USERNAME/wa-data
-AUTH_DIR=C:/Users/YOUR_USERNAME/wa-auth
-
-BROWSER_PATH=C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe
+GROQ_API_KEY=your_api_key
+PORT=5000
+DATABASE_PATH=backend/db/whatsapp.db
+AUTH_DIR=backend/auth
+AI_MODEL=llama-3.3-70b-versatile
 ```
 
-### 4. Start the Backend
-
-```bash
-npm run server
-```
-
-### 5. Start the Frontend
-
+Run it:
 ```bash
 npm run dev
 ```
+(or `npm run backend` and `npm run frontend` separately)
 
-### 6. Open the Dashboard
+Then scan the QR code shown in terminal/dashboard with your WhatsApp to pair it, wait for sync to finish, and you're good to go.
 
-```text
-http://localhost:5173
-```
+## Screenshots
 
-### 7. Link WhatsApp
+(adding these soon)
 
-1. Start the backend.
-2. Scan the QR code using WhatsApp Linked Devices.
-3. The session will be stored locally for future use.
+## Why I'm building this
 
-### 8. Configure the Bot
-
-* Add contacts
-* Enable bot access for selected contacts
-* Create automation rules
-* Select a reply mode
-
-Reply modes:
-
-* Rules → Rule-based replies only
-* AI → Groq AI replies only
-* Smart → Rules first, AI fallback
-
-### 9. Test Using Chat Simulator
-
-Use the built-in simulator to validate rules and AI responses before interacting with real WhatsApp conversations.
-
-## Build for Production
-
-```bash
-npm run build
-```
-
-The production build is generated inside the `dist/` directory.
+Honestly just wanted to learn how to build something full stack that actually does something useful, and WhatsApp automation seemed like a fun project. Eventually want to add more channels, better AI agents, and maybe make it usable for small businesses too. Still a work in progress.
 
 ## Author
 
 Shubhanu Chatterjee
+IIIT Dharwad, Data Science & AI

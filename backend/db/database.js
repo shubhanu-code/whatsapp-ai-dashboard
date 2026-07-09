@@ -1,27 +1,15 @@
 const Database = require("better-sqlite3");
 const path = require("path");
 
-const db = new Database(
-  path.join(__dirname, "whatsapp.db")
-);
-console.log(
-  "DATABASE PATH:",
-  path.join(__dirname, "whatsapp.db")
-);
-const tables =
-  db.prepare(`
-    SELECT name
-    FROM sqlite_master
-    WHERE type='table'
-  `).all();
+const dbPath = path.join(__dirname, "whatsapp.db");
+const db = new Database(dbPath);
 
-console.log(
-  "TABLES:",
-  tables
-);
+console.log("DATABASE PATH:", dbPath);
 
+// Enable Write-Ahead Logging for concurrent performance
 db.pragma("journal_mode = WAL");
 
+// 1. Core Schema Initialization
 db.exec(`
 CREATE TABLE IF NOT EXISTS contacts (
   phoneNumber TEXT PRIMARY KEY,
@@ -88,6 +76,7 @@ CREATE TABLE IF NOT EXISTS ai_usage (
 );
 `);
 
+// 2. Safe Dynamic Column Migrations
 function addColumnIfMissing(tableName, columnName, definition) {
   const columns = db
     .prepare(`PRAGMA table_info(${tableName})`)
@@ -99,10 +88,11 @@ function addColumnIfMissing(tableName, columnName, definition) {
       ALTER TABLE ${tableName}
       ADD COLUMN ${columnName} ${definition}
     `).run();
+    console.log(`Migration: Added column [${columnName}] to table [${tableName}]`);
   }
 }
 
-[
+const migrations = [
   ["messages", "replySource", "TEXT"],
   ["messages", "aiProvider", "TEXT"],
   ["messages", "aiModel", "TEXT"],
@@ -110,45 +100,36 @@ function addColumnIfMissing(tableName, columnName, definition) {
   ["messages", "ruleId", "TEXT"],
   ["ai_usage", "provider", "TEXT"],
   ["ai_usage", "latencyMs", "INTEGER"]
-].forEach(([tableName, columnName, definition]) => {
+];
+
+migrations.forEach(([tableName, columnName, definition]) => {
   addColumnIfMissing(tableName, columnName, definition);
 });
 
-try {
+// 3. System Defaults Configuration
+const defaultSettings = [
+  ["ai_context", ""],
+  ["memory_enabled", "true"],
+  ["memory_limit", "10"],
+  ["ai_personality", "friendly"]
+];
 
-  db.prepare(`
-    ALTER TABLE contacts
-    ADD COLUMN aiContext TEXT DEFAULT ''
-  `).run();
+const insertSetting = db.prepare(`
+  INSERT OR IGNORE INTO settings (key, value)
+  VALUES (?, ?)
+`);
 
-} catch {}
+// Execute system insertions within an explicit transaction performance block
+db.transaction((settingsList) => {
+  for (const [key, value] of settingsList) {
+    insertSetting.run(key, value);
+  }
+})(defaultSettings);
 
-db.prepare(`
-  INSERT OR IGNORE INTO settings
-  (key,value)
-  VALUES
-  ('ai_context','')
-`).run();
-
-db.prepare(`
-  INSERT OR IGNORE INTO settings
-  (key,value)
-  VALUES
-  ('memory_enabled','true')
-`).run();
-
-db.prepare(`
-  INSERT OR IGNORE INTO settings
-  (key,value)
-  VALUES
-  ('memory_limit','10')
-`).run();
-
-db.prepare(`
-  INSERT OR IGNORE INTO settings
-  (key,value)
-  VALUES
-  ('ai_personality','friendly')
-`).run();
+// Log tables initialization overview
+const tables = db.prepare(`
+  SELECT name FROM sqlite_master WHERE type='table'
+`).all();
+console.log("INITIALIZED TABLES:", tables.map(t => t.name));
 
 module.exports = db;

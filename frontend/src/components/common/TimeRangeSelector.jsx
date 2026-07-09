@@ -1,10 +1,10 @@
 const PERIODS = [
-  { label: "24H", value: "hour" },
+  { label: "24 Hours", value: "hour" },
   { label: "Today", value: "today" },
-  { label: "Week", value: "week" },
-  { label: "Month", value: "month" },
-  { label: "Year", value: "year" },
-  { label: "Lifetime", value: "lifetime" },
+  { label: "This Week", value: "week" },
+  { label: "This Month", value: "month" },
+  { label: "This Year", value: "year" },
+  { label: "All Time", value: "lifetime" },
 ];
 
 export default function TimeRangeSelector({
@@ -47,7 +47,6 @@ export default function TimeRangeSelector({
               transition-all
               duration-300
               whitespace-nowrap
-
               ${
                 active
                   ? "bg-[#25D366] text-white shadow-md"

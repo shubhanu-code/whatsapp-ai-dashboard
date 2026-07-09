@@ -18,6 +18,12 @@ function labelClass(darkMode) {
   }`;
 }
 
+function cardClass(darkMode) {
+  return `p-5 rounded-lg shadow-sm border ${
+    darkMode ? "bg-[#111b21] border-[#202c33]" : "bg-white border-slate-200/60"
+  }`;
+}
+
 function Field({ label, darkMode, children }) {
   return (
     <div>
@@ -40,7 +46,7 @@ async function persistRules(rules) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function Rules({ rules, setRules, contacts, darkMode }) {
+export default function Rules({ rules = [], setRules, contacts = [], darkMode }) {
   const [keyword,       setKeyword]       = useState("");
   const [matchType,     setMatchType]     = useState("contains");
   const [targetContact, setTargetContact] = useState("all");
@@ -50,31 +56,36 @@ export default function Rules({ rules, setRules, contacts, darkMode }) {
 
   async function handleAddRule(e) {
     e.preventDefault();
-    if (!keyword || !reply) return;
+    if (!keyword.trim() || !reply.trim()) return;
 
     const newRule = {
       id:            Date.now().toString(),
-      keyword:       keyword.toLowerCase(),
+      keyword:       keyword.trim().toLowerCase(),
       matchType,
       targetContact,
-      reply,
+      reply:         reply.trim(),
       isActive:      true,
     };
 
-    const updated = [...rules, newRule];
+    // Keep an immutable reference of the snapshot before updating for reversion
+    const previousRules = [...rules];
 
-    // Optimistic update — clear form immediately for snappy UX
-    setRules(updated);
+    // Functional update guarantees execution on top of the freshest state stack
+    setRules((prev) => [...prev, newRule]);
+    
+    // Clear form layout for optimistic UI speed
     setKeyword("");
     setReply("");
     setTargetContact("all");
 
     try {
-      await persistRules(updated);
+      // Create the payload using functional resolution data state
+      await persistRules([...previousRules, newRule]);
     } catch (err) {
       console.error("Error saving rule:", err);
-      // Revert UI and restore form so the user doesn't lose their input
-      setRules(rules);
+      
+      // Rollback UI to the explicit context step
+      setRules(previousRules);
       setKeyword(newRule.keyword);
       setReply(newRule.reply);
       setTargetContact(newRule.targetContact);
@@ -83,36 +94,46 @@ export default function Rules({ rules, setRules, contacts, darkMode }) {
   }
 
   async function toggleRule(id) {
-    const updated = rules.map((r) =>
-      r.id === id ? { ...r, isActive: !r.isActive } : r,
-    );
-    setRules(updated);
+    let originalRules = [];
+    
+    setRules((prev) => {
+      originalRules = prev;
+      return prev.map((r) => (r.id === id ? { ...r, isActive: !r.isActive } : r));
+    });
+
     try {
-      await persistRules(updated);
+      // Re-map against snapshot data execution safely
+      const targetState = originalRules.map((r) =>
+        r.id === id ? { ...r, isActive: !r.isActive } : r
+      );
+      await persistRules(targetState);
     } catch (err) {
       console.error("Failed to toggle rule:", err);
-      setRules(rules); // revert on failure
+      setRules(originalRules); 
     }
   }
 
   async function deleteRule(id) {
-    const updated = rules.filter((r) => r.id !== id);
-    setRules(updated);
+    let originalRules = [];
+
+    setRules((prev) => {
+      originalRules = prev;
+      return prev.filter((r) => r.id !== id);
+    });
+
     try {
-      await persistRules(updated);
+      const targetState = originalRules.filter((r) => r.id !== id);
+      await persistRules(targetState);
     } catch (err) {
       console.error("Failed to delete rule:", err);
-      setRules(rules); // revert on failure
+      setRules(originalRules);
     }
   }
 
-  // ── Shared class strings ────────────────────────────────────────────────────
-
-  const cardClass = `p-5 rounded-lg shadow-sm border ${
-    darkMode ? "bg-[#111b21] border-[#202c33]" : "bg-white border-slate-200/60"
-  }`;
-
   // ── Render ──────────────────────────────────────────────────────────────────
+
+  const safeRules = Array.isArray(rules) ? rules : [];
+  const safeContacts = Array.isArray(contacts) ? contacts : [];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -123,12 +144,8 @@ export default function Rules({ rules, setRules, contacts, darkMode }) {
       </h1>
 
       {/* ── Create rule form ─────────────────────────────────────────────────── */}
-      <div className={cardClass}>
-        <h3
-          className={`text-[15px] font-semibold mb-4 ${
-            darkMode ? "text-white" : "text-slate-700"
-          }`}
-        >
+      <div className={cardClass(darkMode)}>
+        <h3 className={`text-[15px] font-semibold mb-4 ${darkMode ? "text-white" : "text-slate-700"}`}>
           Create New Rule
         </h3>
 
@@ -163,7 +180,7 @@ export default function Rules({ rules, setRules, contacts, darkMode }) {
                 className={`${inputClass(darkMode)} cursor-pointer`}
               >
                 <option value="all">Everyone (All Contacts & Unknown)</option>
-                {contacts.map((c) => (
+                {safeContacts.map((c) => (
                   <option key={c.phoneNumber} value={c.phoneNumber}>
                     Only {c.name}
                   </option>
@@ -195,7 +212,7 @@ export default function Rules({ rules, setRules, contacts, darkMode }) {
 
       {/* ── Rules list ───────────────────────────────────────────────────────── */}
       <div className="grid gap-3.5">
-        {rules.length === 0 ? (
+        {safeRules.length === 0 ? (
           <div
             className={`p-10 text-center rounded-lg border text-sm font-medium ${
               darkMode
@@ -206,19 +223,18 @@ export default function Rules({ rules, setRules, contacts, darkMode }) {
             No active rules. Create one to start automating replies.
           </div>
         ) : (
-          rules.map((rule) => {
+          safeRules.map((rule) => {
             const targetName =
               rule.targetContact === "all"
                 ? "Everyone"
-                : contacts.find((c) => c.phoneNumber === rule.targetContact)?.name ??
-                  "Unknown Contact";
+                : safeContacts.find((c) => c.phoneNumber === rule.targetContact)?.name ?? "Unknown Contact";
 
             return (
               <div
                 key={rule.id}
                 className={`p-4 rounded-lg shadow-sm flex flex-col md:flex-row gap-4 items-start md:items-center justify-between transition-all border ${
                   darkMode ? "bg-[#111b21] border-[#202c33]" : "bg-white border-slate-200/60"
-                } ${!rule.isActive && "opacity-55 grayscale-[30%]"}`}
+                } ${!rule.isActive ? "opacity-55 grayscale-[30%]" : ""}`}
               >
                 {/* Rule details */}
                 <div className="flex-1 space-y-2.5 w-full">

@@ -9,7 +9,7 @@ const MEDIA_TYPES = {
   "[PHOTO]":         { icon: Image,    color: "text-emerald-500", label: "Photo" },
   "[VIDEO]":         { icon: Video,    color: "text-purple-500",  label: "Video" },
   "[VOICE MESSAGE]": { icon: Mic,      color: "text-sky-500",     label: "Voice Message" },
-  "[DOCUMENT]":      { icon: FileText, color: "text-amber-500",   label: "Document" },
+  "[DOCUMENT]":      { icon: FileText, color: "text-amber-500",  label: "Document" },
   "[STICKER]":       { icon: Image,    color: "text-pink-500",    label: "Sticker" },
 };
 
@@ -88,7 +88,11 @@ function ContextMenuButton({ onClick, darkMode, hoverClass, textClass = "", chil
   );
 }
 
+// Enforce safe boundary checks for window edges
 function FloatingMenu({ x, y, darkMode, children }) {
+  const adjustedX = window.innerWidth - x < 240 ? x - 220 : x;
+  const adjustedY = window.innerHeight - y < 200 ? y - 160 : y;
+
   return (
     <div
       className={`fixed z-50 border rounded-xl shadow-xl py-2 min-w-[220px] ${
@@ -96,19 +100,13 @@ function FloatingMenu({ x, y, darkMode, children }) {
           ? "bg-[#202c33] border-[#2a3942] text-white"
           : "bg-white border-slate-200"
       }`}
-      style={{ left: x, top: y }}
+      style={{ left: adjustedX, top: adjustedY }}
     >
       {children}
     </div>
   );
 }
 
-// Memoized message bubble list — this used to be an inline .map() recomputed
-// on every render of Inbox (including every keystroke in the reply box).
-// With history sync now loading potentially hundreds/thousands of messages,
-// that recompute was the main source of the typing/scrolling lag. Wrapping
-// it in React.memo means it only re-renders when messages/darkMode actually
-// change, not when unrelated state (replyText, menus, etc.) changes.
 const MessageList = React.memo(function MessageList({ messages, darkMode, onContextMenu }) {
   return (
     <>
@@ -140,7 +138,7 @@ const MessageList = React.memo(function MessageList({ messages, darkMode, onCont
             <div
               onContextMenu={(e) => {
                 e.preventDefault();
-                onContextMenu({ x: e.pageX, y: e.pageY, message: msg });
+                onContextMenu({ x: e.clientX, y: e.clientY, message: msg });
               }}
               className={`flex w-full min-w-0 mb-0 ${isOutgoing ? "justify-end" : "justify-start"}`}
             >
@@ -198,19 +196,24 @@ const Inbox = ({ darkMode }) => {
 
   const messagesEndRef       = useRef(null);
   const messagesContainerRef = useRef(null);
+  const textareaRef          = useRef(null);
   const selectedConversationRef = useRef(null);
   const refreshTimerRef      = useRef(null);
 
-  // Keep a ref in sync with selectedConversation so the socket handler
-  // (registered once) always reads the latest value without needing to
-  // resubscribe on every conversation change.
   useEffect(() => {
     selectedConversationRef.current = selectedConversation;
   }, [selectedConversation]);
 
+  // Handle auto-growing input height based on lines
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [replyText]);
+
   // ── Effects ─────────────────────────────────────────────────────────────────
 
-  // Close all menus on any click
   useEffect(() => {
     const closeMenus = () => {
       setContextMenu(null);
@@ -220,7 +223,6 @@ const Inbox = ({ darkMode }) => {
     return () => window.removeEventListener("click", closeMenus);
   }, []);
 
-  // Auto-scroll to bottom when new messages arrive (only when near bottom)
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -231,34 +233,32 @@ const Inbox = ({ darkMode }) => {
     }
   }, [messages]);
 
-  // Load conversations on mount
   useEffect(() => {
     getConversations().then(setConversations).catch(console.error);
   }, []);
 
-  // Real-time updates via socket.
-  
-  // Real-time updates via socket.
+  // Fixed closure implementation for reliable cross-chat real-time syncing
   useEffect(() => {
     const refreshNow = async () => {
-      const updated = await getConversations();
-      setConversations(updated);
-      
-      const current = selectedConversationRef.current;
-      if (current) {
-        // 1. Fetch updated message stream
-        const data = await getMessages(current.phoneNumber);
-        setMessages(data);
+      try {
+        const updated = await getConversations();
+        setConversations(updated);
+        
+        const current = selectedConversationRef.current;
+        if (current) {
+          const data = await getMessages(current.phoneNumber);
+          setMessages(data);
 
-        // 2. Locate the fresh snapshot of this specific conversation from the backend array
-        const matchedActiveChat = updated.find(
-          (c) => c.phoneNumber === current.phoneNumber
-        );
+          const matchedActiveChat = updated.find(
+            (c) => c.phoneNumber === current.phoneNumber
+          );
 
-        // 3. Update the active conversation state to overwrite "Unknown" instantly
-        if (matchedActiveChat) {
-          setSelectedConversation(matchedActiveChat);
+          if (matchedActiveChat) {
+            setSelectedConversation(matchedActiveChat);
+          }
         }
+      } catch (err) {
+        console.error("Failed to sync socket update:", err);
       }
     };
 
@@ -273,7 +273,8 @@ const Inbox = ({ darkMode }) => {
       if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     };
   }, []);
-  // ── Data helpers ─────────────────────────────────────────────────────────────
+
+  // ── Chat actions ─────────────────────────────────────────────────────────────
 
   async function loadMessages(phoneNumber) {
     const data = await getMessages(phoneNumber);
@@ -285,14 +286,13 @@ const Inbox = ({ darkMode }) => {
     setConversations(updated);
   }
 
-  // ── Chat actions ─────────────────────────────────────────────────────────────
-
   async function sendReply() {
     if (!selectedConversation || !replyText.trim()) return;
     try {
-      await sendMessage(selectedConversation.phoneNumber, replyText);
+      const textToSend = replyText;
+      setReplyText(""); // Reset layout instantly for snappy feel
+      await sendMessage(selectedConversation.phoneNumber, textToSend);
       await loadMessages(selectedConversation.phoneNumber);
-      setReplyText("");
     } catch (err) {
       console.error(err);
     }
@@ -305,7 +305,6 @@ const Inbox = ({ darkMode }) => {
     }
   }
 
-  /** Generic chat-level API action followed by a conversations refresh. */
   async function chatAction(url, method = "POST") {
     await fetch(`${API_BASE}${url}`, { method });
     await refreshConversations();
@@ -314,10 +313,6 @@ const Inbox = ({ darkMode }) => {
 
   async function selectConversation(conv) {
     setSelectedConversation(conv);
-    // These three were previously sequential awaits (mark-read, then load
-    // messages, then refresh the conversation list) even though mark-read
-    // and load-messages don't depend on each other. Running them in
-    // parallel cuts the perceived delay when switching chats.
     await Promise.all([
       fetch(`${API_BASE}/messages/read/${conv.phoneNumber}`, { method: "POST" }),
       loadMessages(conv.phoneNumber),
@@ -362,12 +357,6 @@ const Inbox = ({ darkMode }) => {
     }
   }
 
-  // ── Derived data ─────────────────────────────────────────────────────────────
-
-  // Memoized: this filter+sort used to re-run on EVERY render of Inbox,
-  // including every keystroke while typing a reply — expensive once the
-  // conversation list is large. Now it only recomputes when the
-  // conversations list or search term actually changes.
   const filteredConversations = useMemo(() => {
     return conversations
       .filter((conv) => !conv.phoneNumber?.includes("@g.us"))
@@ -387,8 +376,6 @@ const Inbox = ({ darkMode }) => {
 
   const openMessageMenu = useCallback((menu) => setMessageMenu(menu), []);
 
-  // ── Render ───────────────────────────────────────────────────────────────────
-
   return (
     <>
       <div className="space-y-4">
@@ -401,13 +388,12 @@ const Inbox = ({ darkMode }) => {
             darkMode ? "bg-[#202c33] border-[#2a3942]" : "bg-white border-slate-100 shadow-sm"
           }`}
         >
-          {/* ── Left panel: conversation list ─────────────────────────────── */}
+          {/* Left panel */}
           <div
             className={`w-[32%] min-w-0 transition-all duration-300 flex flex-col border-r ${
               darkMode ? "bg-[#111b21] border-[#2a3942]" : "bg-white border-slate-100"
             }`}
           >
-            {/* Search */}
             <div className="p-4 border-b border-slate-200">
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -424,12 +410,10 @@ const Inbox = ({ darkMode }) => {
               </div>
             </div>
 
-            {/* Chat count */}
             <div className={`px-4 py-2 text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
               {filteredConversations.length} chats
             </div>
 
-            {/* Conversation list */}
             <div className="overflow-y-auto flex-1">
               {filteredConversations.map((conv) => {
                 const isSelected = selectedConversation?.phoneNumber === conv.phoneNumber;
@@ -439,7 +423,7 @@ const Inbox = ({ darkMode }) => {
                     onClick={() => selectConversation(conv)}
                     onContextMenu={(e) => {
                       e.preventDefault();
-                      setContextMenu({ x: e.pageX, y: e.pageY, conversation: conv });
+                      setContextMenu({ x: e.clientX, y: e.clientY, conversation: conv });
                     }}
                     className={`border-b cursor-pointer transition-all duration-200 hover:translate-x-1 ${
                       darkMode ? "border-[#1a252d]" : "border-slate-100"
@@ -458,10 +442,7 @@ const Inbox = ({ darkMode }) => {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between w-full gap-2">
-                          {/* Name + pins */}
-                          <div
-                            className={`font-semibold ${darkMode ? "text-white" : "text-slate-800"}`}
-                          >
+                          <div className={`font-semibold ${darkMode ? "text-white" : "text-slate-800"}`}>
                             <div className="flex items-center gap-2">
                               {conv.pinned && (
                                 <Pin size={14} className="text-orange-400" fill="currentColor" />
@@ -474,16 +455,9 @@ const Inbox = ({ darkMode }) => {
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            {/* Timestamp */}
-                            <span
-                              className={`text-[13px] font-medium whitespace-nowrap ${
-                                darkMode ? "text-slate-400" : "text-slate-500"
-                              }`}
-                            >
+                            <span className={`text-[13px] font-medium whitespace-nowrap ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
                               {formatConversationTime(conv.timestamp)}
                             </span>
-
-                            {/* Unread badge */}
                             {conv.unreadCount > 0 && (
                               <div className="min-w-[22px] h-[22px] rounded-full bg-[#25D366] text-white text-xs font-bold flex items-center justify-center">
                                 {conv.unreadCount}
@@ -492,12 +466,7 @@ const Inbox = ({ darkMode }) => {
                           </div>
                         </div>
 
-                        {/* Last message preview */}
-                        <div
-                          className={`text-[14px] truncate mt-2 ${
-                            darkMode ? "text-slate-400" : "text-slate-500"
-                          }`}
-                        >
+                        <div className={`text-[14px] truncate mt-2 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
                           {MEDIA_PREVIEWS[conv.lastMessage] ?? conv.lastMessage}
                         </div>
                       </div>
@@ -508,14 +477,9 @@ const Inbox = ({ darkMode }) => {
             </div>
           </div>
 
-          {/* ── Right panel: message thread ───────────────────────────────── */}
-          <div
-            className={`flex-1 min-w-0 flex flex-col ${
-              darkMode ? "bg-[#0b141a]" : "bg-[#efeae2]"
-            }`}
-          >
+          {/* Right panel */}
+          <div className={`flex-1 min-w-0 flex flex-col ${darkMode ? "bg-[#0b141a]" : "bg-[#efeae2]"}`}>
             {!selectedConversation ? (
-              /* Empty state */
               <div className="flex flex-col items-center justify-center h-full text-slate-400">
                 <Bot size={70} />
                 <h3 className="font-semibold text-lg mt-4">WhatsApp Inbox</h3>
@@ -523,32 +487,18 @@ const Inbox = ({ darkMode }) => {
               </div>
             ) : (
               <>
-                {/* Chat header */}
-                <div
-                  className={`px-4 py-3 flex items-center gap-3 ${
-                    darkMode ? "bg-[#202c33]" : "bg-white border-b border-slate-200"
-                  }`}
-                >
+                <div className={`px-4 py-3 flex items-center gap-3 ${darkMode ? "bg-[#202c33]" : "bg-white border-b border-slate-200"}`}>
                   <Avatar name={selectedConversation.contactName} darkMode={darkMode} />
                   <div>
-                    <h3
-                      className={`font-semibold ${darkMode ? "text-white" : "text-slate-800"}`}
-                    >
+                    <h3 className={`font-semibold ${darkMode ? "text-white" : "text-slate-800"}`}>
                       {selectedConversation.contactName}
                     </h3>
-                    <span
-                      className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        darkMode
-                          ? "bg-[#25D366]/20 text-[#25D366]"
-                          : "bg-emerald-100 text-emerald-700"
-                      }`}
-                    >
+                    <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${darkMode ? "bg-[#25D366]/20 text-[#25D366]" : "bg-emerald-100 text-emerald-700"}`}>
                       WhatsApp Contact
                     </span>
                   </div>
                 </div>
 
-                {/* Message list */}
                 <div
                   ref={messagesContainerRef}
                   className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6"
@@ -568,36 +518,23 @@ const Inbox = ({ darkMode }) => {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Reply input */}
-                <div
-                  className={`p-3 border-t flex gap-3 ${
-                    darkMode ? "bg-[#202c33] border-[#2a3942]" : "bg-white border-slate-200"
-                  }`}
-                >
+                <div className={`p-3 border-t flex gap-3 items-end ${darkMode ? "bg-[#202c33] border-[#2a3942]" : "bg-white border-slate-200"}`}>
                   <textarea
+                    ref={textareaRef}
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Type a message...  (Enter to send • Shift+Enter for a new line)"
+                    placeholder="Type a message... (Enter to send • Shift+Enter for newline)"
                     rows={1}
-                    className={`
-                      flex-1
-                      border
-                      rounded-xl
-                      px-4
-                      py-2
-                      resize-none
-                      overflow-y-auto
-                      ${
-                        darkMode
-                          ? "bg-[#2a3942] border-[#3b4a54] text-white placeholder:text-slate-400"
-                          : "bg-slate-50 border-slate-200"
-                      }
-                    `}
+                    className={`flex-1 border rounded-xl px-4 py-2.5 resize-none max-h-[120px] overflow-y-auto outline-none text-sm leading-relaxed ${
+                      darkMode
+                        ? "bg-[#2a3942] border-[#3b4a54] text-white placeholder:text-slate-400"
+                        : "bg-slate-50 border-slate-200 text-slate-800"
+                    }`}
                   />
                   <button
                     onClick={sendReply}
-                    className="w-11 h-11 rounded-xl bg-[#008069] hover:bg-[#006e5a] text-white flex items-center justify-center"
+                    className="w-11 h-11 shrink-0 rounded-xl bg-[#008069] hover:bg-[#006e5a] text-white flex items-center justify-center transition-colors shadow-sm"
                   >
                     <Send size={18} />
                   </button>
@@ -608,7 +545,7 @@ const Inbox = ({ darkMode }) => {
         </div>
       </div>
 
-      {/* ── Context menu (right-click on conversation) ──────────────────────── */}
+      {/* Conversation right-click context menu */}
       {contextMenu && (
         <FloatingMenu x={contextMenu.x} y={contextMenu.y} darkMode={darkMode}>
           <ContextMenuButton
@@ -651,7 +588,7 @@ const Inbox = ({ darkMode }) => {
         </FloatingMenu>
       )}
 
-      {/* ── Message context menu (right-click on message) ───────────────────── */}
+      {/* Message right-click context menu */}
       {messageMenu && (
         <FloatingMenu x={messageMenu.x} y={messageMenu.y} darkMode={darkMode}>
           <ContextMenuButton
@@ -675,18 +612,13 @@ const Inbox = ({ darkMode }) => {
         </FloatingMenu>
       )}
 
-      {/* ── Delete confirmation modal ────────────────────────────────────────── */}
+      {/* Delete confirmation modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[100]">
-          <div
-            className={`rounded-2xl p-6 w-[400px] shadow-xl ${
-              darkMode ? "bg-[#111b21] text-white" : "bg-white"
-            }`}
-          >
+          <div className={`rounded-2xl p-6 w-[400px] shadow-xl ${darkMode ? "bg-[#111b21] text-white" : "bg-white"}`}>
             <h3 className="text-lg font-semibold">Delete Chat</h3>
             <p className={`mt-2 ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
-              Delete conversation with{" "}
-              <span className="font-medium">{deleteConfirm.contactName}</span>?
+              Delete conversation with <span className="font-medium">{deleteConfirm.contactName}</span>?
             </p>
 
             <div className="flex justify-end gap-3 mt-6">

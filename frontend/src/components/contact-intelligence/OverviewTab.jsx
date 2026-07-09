@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Bot,
   CalendarDays,
@@ -10,18 +11,22 @@ import {
 } from "lucide-react";
 import StatCard from "./StatCard";
 
+// ─── Pure Utility Handlers ───────────────────────────────────────────────────
+
 function formatDate(value) {
   if (!value) return "Not available";
   return new Date(value).toLocaleString("en-IN", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: true,
-});
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
 }
+
+// ─── Primitive Shared Subcomponents ──────────────────────────────────────────
 
 function Detail({ label, value, darkMode }) {
   return (
@@ -51,21 +56,28 @@ function Detail({ label, value, darkMode }) {
   );
 }
 
+// ─── Main Tab Component ───────────────────────────────────────────────────────
+
 export default function OverviewTab({ data, darkMode }) {
   const overview = data?.overview || {};
   const messages = data?.messages || {};
   const summary = data?.summary || {};
 
-  const averageLength = Math.round(
-    ((messages.averageIncomingLength || 0) +
-      (messages.averageOutgoingLength || 0)) /
-      2,
-  );
+  // Memoize calculations to decouple layout calculation overhead from state updates
+  const averageLength = useMemo(() => {
+    const incoming = messages.averageIncomingLength || 0;
+    const outgoing = messages.averageOutgoingLength || 0;
+    return Math.round((incoming + outgoing) / 2);
+  }, [messages.averageIncomingLength, messages.averageOutgoingLength]);
+
+  // Standardize styling class evaluations
+  const containerBorderClass = darkMode ? "border-[#202c33]" : "border-slate-200";
+  const innerCardBgClass = darkMode ? "bg-[#0f1a20]" : "bg-slate-50";
+  const headingTextClass = darkMode ? "text-white" : "text-slate-900";
 
   return (
     <div className="space-y-7">
-      {/* Stats */}
-
+      {/* Primary Analytical Metrics Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label="Total Messages"
@@ -73,7 +85,6 @@ export default function OverviewTab({ data, darkMode }) {
           icon={MessagesSquare}
           darkMode={darkMode}
         />
-
         <StatCard
           label="Incoming"
           value={messages.incoming || 0}
@@ -81,7 +92,6 @@ export default function OverviewTab({ data, darkMode }) {
           tone="blue"
           darkMode={darkMode}
         />
-
         <StatCard
           label="Outgoing"
           value={messages.outgoing || 0}
@@ -89,7 +99,6 @@ export default function OverviewTab({ data, darkMode }) {
           tone="cyan"
           darkMode={darkMode}
         />
-
         <StatCard
           label="Average / Day"
           value={messages.averageMessagesPerDay || 0}
@@ -97,7 +106,6 @@ export default function OverviewTab({ data, darkMode }) {
           tone="amber"
           darkMode={darkMode}
         />
-
         <StatCard
           label="Avg Length"
           value={averageLength}
@@ -108,89 +116,54 @@ export default function OverviewTab({ data, darkMode }) {
         />
       </div>
 
-      {/* Conversation Overview */}
-
+      {/* Main Conversation Insight Card */}
       <div
-        className={`rounded-2xl border p-6 shadow-sm ${
-          darkMode
-            ? "border-[#202c33] bg-[#111b21]"
-            : "border-slate-200 bg-white"
+        className={`rounded-2xl border p-6 shadow-sm transition-colors ${
+          darkMode ? "border-[#202c33] bg-[#111b21]" : "border-slate-200 bg-white"
         }`}
       >
-        {/* Header */}
-
+        {/* Card Header Section */}
         <div className="flex items-center gap-3">
           <div className="rounded-xl bg-emerald-500/15 p-3">
-            <Bot
-              size={20}
-              className="text-emerald-500"
-            />
+            <Bot size={20} className="text-emerald-500" />
           </div>
-
           <div>
-            <h3
-              className={`text-lg font-semibold ${
-                darkMode
-                  ? "text-white"
-                  : "text-slate-900"
-              }`}
-            >
+            <h3 className={`text-lg font-semibold ${headingTextClass}`}>
               Overview
             </h3>
-
-            <p
-              className={`mt-1 text-sm ${
-                darkMode
-                  ? "text-slate-400"
-                  : "text-slate-500"
-              }`}
-            >
+            <p className={`mt-1 text-sm ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
               General information and AI insights
             </p>
           </div>
         </div>
 
-        {/* Details */}
-
+        {/* Structured Grid Parameters */}
         <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <Detail
             label="Conversation Age"
             value={`${overview.conversationDays || 0} days`}
             darkMode={darkMode}
           />
-
           <Detail
             label="First Message"
-            value={formatDate(
-              overview.firstMessage,
-            )}
+            value={formatDate(overview.firstMessage)}
             darkMode={darkMode}
           />
-
           <Detail
             label="Last Message"
-            value={formatDate(
-              overview.lastMessage,
-            )}
+            value={formatDate(overview.lastMessage)}
             darkMode={darkMode}
           />
-
           <Detail
             label="Relationship"
             value={overview.relationship}
             darkMode={darkMode}
           />
-
           <Detail
             label="Bot Enabled"
-            value={
-              overview.botEnabled
-                ? "Enabled"
-                : "Disabled"
-            }
+            value={overview.botEnabled ? "Enabled" : "Disabled"}
             darkMode={darkMode}
           />
-
           <Detail
             label="Summary Status"
             value={summary.status || "Empty"}
@@ -198,65 +171,35 @@ export default function OverviewTab({ data, darkMode }) {
           />
         </div>
 
-        {/* AI Profile */}
-
+        {/* Custom Context Section: AI Profile */}
         <div className="mt-7">
           <div className="mb-3 flex items-center gap-2">
-            <Sparkles
-              size={18}
-              className="text-violet-500"
-            />
-
-            <h4
-              className={`font-semibold ${
-                darkMode
-                  ? "text-white"
-                  : "text-slate-900"
-              }`}
-            >
+            <Sparkles size={18} className="text-violet-500" />
+            <h4 className={`font-semibold ${headingTextClass}`}>
               AI Profile
             </h4>
           </div>
-
           <Detail
             label="Profile"
-            value={
-              overview.aiProfile ||
-              "No contact-specific AI profile has been configured."
-            }
+            value={overview.aiProfile || "No contact-specific AI profile has been configured."}
             darkMode={darkMode}
           />
         </div>
 
-        {/* Summary */}
-
+        {/* Long Text Block Section: Longitudinal Summary */}
         <div className="mt-7">
           <div className="mb-3 flex items-center gap-2">
-            <CalendarDays
-              size={18}
-              className="text-emerald-500"
-            />
-
-            <h4
-              className={`font-semibold ${
-                darkMode
-                  ? "text-white"
-                  : "text-slate-900"
-              }`}
-            >
+            <CalendarDays size={18} className="text-emerald-500" />
+            <h4 className={`font-semibold ${headingTextClass}`}>
               AI Conversation Summary
             </h4>
           </div>
-
           <div
-            className={`rounded-xl border p-5 leading-7 ${
-              darkMode
-                ? "border-[#202c33] bg-[#0f1a20] text-slate-300"
-                : "border-slate-200 bg-slate-50 text-slate-700"
+            className={`rounded-xl border p-5 leading-7 transition-colors ${containerBorderClass} ${innerCardBgClass} ${
+              darkMode ? "text-slate-300" : "text-slate-700"
             }`}
           >
-            {summary.text ||
-              "No conversation summary has been generated yet."}
+            {summary.text || "No conversation summary has been generated yet."}
           </div>
         </div>
       </div>

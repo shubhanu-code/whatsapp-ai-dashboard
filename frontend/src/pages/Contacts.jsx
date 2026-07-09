@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, Plus, Trash2, Edit3, User } from "lucide-react";
+import { BarChart3, Plus, Trash2, Edit3, User, Search, X } from "lucide-react";
 import { API_BASE } from "../services/api";
 import ContactIntelligenceModal from "../components/contact-intelligence/ContactIntelligenceModal";
 
@@ -50,7 +50,6 @@ function modalInputClass(darkMode) {
   }`;
 }
 
-/** Dropdown shared between the add form and the table relationship column. */
 function RelationshipSelect({ value, onChange, className }) {
   return (
     <select value={value} onChange={onChange} className={className}>
@@ -96,14 +95,12 @@ function EditModal({ contact, onSave, onClose, darkMode }) {
       >
         <h3 className="text-lg font-semibold mb-4">Edit Contact</h3>
 
-        {/* Tabs */}
         <div className="flex gap-2 mb-4">
           {tabBtn("basic", "Basic")}
           {tabBtn("ai",    "AI Profile")}
         </div>
 
         <div className="space-y-4">
-          {/* Basic tab */}
           {activeTab === "basic" && (
             <>
               <input
@@ -123,11 +120,9 @@ function EditModal({ contact, onSave, onClose, darkMode }) {
             </>
           )}
 
-          {/* AI Profile tab */}
           {activeTab === "ai" && (
             <div className="space-y-2">
               <label className="text-sm font-medium">AI Profile</label>
-
               <textarea
                 rows={8}
                 value={draft.aiContext || ""}
@@ -135,7 +130,6 @@ function EditModal({ contact, onSave, onClose, darkMode }) {
                 placeholder={"Father\n\nDiscusses academics and finances.\n\nKeep replies respectful and concise."}
                 className={`${modalInputClass(darkMode)} resize-none p-3`}
               />
-
               <div
                 className={`text-xs rounded-lg p-3 ${
                   darkMode ? "bg-[#202c33] text-slate-400" : "bg-slate-50 text-slate-500"
@@ -146,14 +140,12 @@ function EditModal({ contact, onSave, onClose, darkMode }) {
                 Preferred tone: Respectful<br />
                 Topics: Academics, finances
               </div>
-
               <p className={`text-xs ${darkMode ? "text-slate-400" : "text-slate-500"}`}>
                 Personalized instructions used only for this contact.
               </p>
             </div>
           )}
 
-          {/* Actions */}
           <div className="flex justify-end gap-3">
             <button
               onClick={onClose}
@@ -181,13 +173,12 @@ function EditModal({ contact, onSave, onClose, darkMode }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function Contacts({ contacts, setContacts, rules, setRules, showToast, darkMode }) {
-  const [name,           setName]           = useState("");
-  const [phone,          setPhone]          = useState("");
-  const [relationship,   setRelationship]   = useState("Unknown");
-  const [editingContact, setEditingContact] = useState(null);
-  const [insightContact, setInsightContact] = useState(null);
-
-  // ── API helpers ─────────────────────────────────────────────────────────────
+  const [name,               setName]           = useState("");
+  const [phone,              setPhone]          = useState("");
+  const [relationship,       setRelationship]   = useState("Unknown");
+  const [editingContact,     setEditingContact] = useState(null);
+  const [insightContact,     setInsightContact] = useState(null);
+  const [searchQuery,        setSearchQuery]    = useState("");
 
   async function saveContacts(updated) {
     await fetch(`${API_BASE}/contacts`, {
@@ -204,8 +195,6 @@ export default function Contacts({ contacts, setContacts, rules, setRules, showT
       body:    JSON.stringify(updated),
     });
   }
-
-  // ── Handlers ────────────────────────────────────────────────────────────────
 
   async function handleAdd(e) {
     e.preventDefault();
@@ -266,7 +255,6 @@ export default function Contacts({ contacts, setContacts, rules, setRules, showT
       c.phoneNumber === id ? { ...c, botEnabled: !c.botEnabled } : c,
     );
 
-    // Read the current state before updating so the toast is accurate
     const wasEnabled = contacts.find((c) => c.phoneNumber === id)?.botEnabled;
 
     try {
@@ -297,135 +285,146 @@ export default function Contacts({ contacts, setContacts, rules, setRules, showT
     setEditingContact(null);
   }
 
-  // ── Shared class strings ────────────────────────────────────────────────────
+  const filteredContacts = contacts.filter((contact) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      contact.name?.toLowerCase().includes(query) ||
+      contact.phoneNumber?.toLowerCase().includes(query) ||
+      contact.relationship?.toLowerCase().includes(query)
+    );
+  });
 
-  const thClass = `px-6 py-3.5 font-semibold text-xs uppercase tracking-wider ${
-    darkMode ? "bg-[#172229]" : "bg-slate-50"
+  const thClass = `px-6 py-4 font-bold text-xs uppercase tracking-wider sticky top-0 z-10 shadow-sm border-b ${
+    darkMode ? "bg-[#172229] text-slate-300 border-[#2a3942]" : "bg-slate-50 text-slate-500 border-slate-100"
   }`;
 
-  // ── Render ──────────────────────────────────────────────────────────────────
-
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="h-[calc(100vh-2rem)] flex flex-col space-y-6 animate-in fade-in duration-300 overflow-hidden">
+      
+      {/* ── Static Top Block (Pinned Headers & Form) ───────────────────────── */}
+      <div className="shrink-0 space-y-6">
+        <h1 className={`text-3xl font-bold ${darkMode ? "text-white" : "text-slate-800"}`}>
+          Contact Manager
+        </h1>
 
-      {/* Page title */}
-      <h1 className={`text-3xl font-bold mb-8 ${darkMode ? "text-white" : "text-slate-800"}`}>
-        Contact Manager
-      </h1>
-
-      {/* ── Add contact form ────────────────────────────────────────────────── */}
-      <div
-        className={`p-5 rounded-lg border shadow-sm ${
-          darkMode ? "bg-[#111b21] border-[#202c33]" : "bg-white border-slate-200/60"
-        }`}
-      >
-        <h3
-          className={`text-[15px] font-semibold mb-4 ${
-            darkMode ? "text-white" : "text-slate-700"
+        {/* Add contact form */}
+        <div
+          className={`p-5 rounded-xl border shadow-sm ${
+            darkMode ? "bg-[#111b21] border-[#202c33]" : "bg-white border-slate-200/60"
           }`}
         >
-          Add New Contact
-        </h3>
+          <h3 className={`text-[15px] font-semibold mb-4 ${darkMode ? "text-white" : "text-slate-700"}`}>
+            Add New Contact
+          </h3>
 
-        <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          <div className="md:col-span-3">
-            <input
-              type="text"
-              placeholder="Contact Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className={inputClass(darkMode)}
-            />
+          <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            <div className="md:col-span-3">
+              <input
+                type="text"
+                placeholder="Contact Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className={inputClass(darkMode)}
+              />
+            </div>
+            <div className="md:col-span-4">
+              <input
+                type="text"
+                placeholder="Phone Number (e.g. 1234567890)"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className={inputClass(darkMode)}
+              />
+            </div>
+            <div className="md:col-span-3">
+              <RelationshipSelect
+                value={relationship}
+                onChange={(e) => setRelationship(e.target.value)}
+                className={inputClass(darkMode)}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <button
+                type="submit"
+                className="w-full h-full min-h-[44px] bg-[#008069] hover:bg-[#006e5a] active:scale-[0.98] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-sm shadow-emerald-700/10"
+              >
+                <Plus size={16} />
+                <span>Add Contact</span>
+              </button>
+            </div>
+          </form>
+          <p className="text-xs mt-2 text-slate-500">
+            Contacts are linked automatically when they message you on WhatsApp.
+          </p>
+        </div>
+
+        {/* Search Bar Utility */}
+        <div className="relative max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <Search size={18} />
           </div>
-
-          <div className="md:col-span-4">
-            <input
-              type="text"
-              placeholder="Phone Number (e.g. 1234567890)"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className={inputClass(darkMode)}
-            />
-          </div>
-
-          <div className="md:col-span-3">
-            <RelationshipSelect
-              value={relationship}
-              onChange={(e) => setRelationship(e.target.value)}
-              className={inputClass(darkMode)}
-            />
-          </div>
-
-          <div className="md:col-span-2">
+          <input
+            type="text"
+            placeholder="Search by name, phone or group..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`${inputClass(darkMode, "pl-11 pr-10")}`}
+          />
+          {searchQuery && (
             <button
-              type="submit"
-              className="w-full h-full min-h-[44px] bg-[#008069] hover:bg-[#006e5a] active:scale-[0.98] text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-sm shadow-emerald-700/10"
+              onClick={() => setSearchQuery("")}
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
             >
-              <Plus size={16} />
-              Add Contact
+              <X size={16} />
             </button>
-          </div>
-        </form>
-
-        <p className="text-xs mt-2 text-slate-500">
-          Contacts are linked automatically when they message you on WhatsApp.
-        </p>
+          )}
+        </div>
       </div>
 
-      {/* ── Contacts table ───────────────────────────────────────────────────── */}
+      {/* ── Dynamic Scrolling Body Block ───────────────────────────────────── */}
       <div
-        className={`rounded-lg border shadow-sm overflow-hidden ${
+        className={`flex-1 min-h-0 rounded-xl border shadow-sm overflow-y-auto ${
           darkMode ? "bg-[#111b21] border-[#202c33]" : "bg-white border-slate-200/60"
         }`}
       >
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse table-auto">
           <thead>
-            <tr
-              className={`border-b ${
-                darkMode ? "bg-[#202c33] border-[#2a3942]" : "bg-slate-50/70 border-slate-100"
-              }`}
-            >
+            <tr>
               <th className={thClass}>Name</th>
               <th className={thClass}>Phone Number</th>
               <th className={thClass}>Relationship</th>
               <th className={thClass}>Bot</th>
-              <th className={`${thClass} text-right`}>Actions</th>
+              <th className={`${thClass} text-right pr-6`}>Actions</th>
             </tr>
           </thead>
 
           <tbody className={`divide-y ${darkMode ? "divide-[#202c33]" : "divide-slate-100"}`}>
-            {contacts.length === 0 ? (
+            {filteredContacts.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-10 text-center text-sm text-slate-400 font-medium">
-                  No contacts found. Add one above.
+                  {contacts.length === 0 ? "No contacts found. Add one above." : "No matching contacts found."}
                 </td>
               </tr>
             ) : (
-              contacts.map((c) => (
+              filteredContacts.map((c) => (
                 <tr
                   key={c.phoneNumber}
-                  className={`transition-colors ${
-                    darkMode ? "hover:bg-[#202c33]" : "hover:bg-slate-50/80"
-                  }`}
+                  className={`transition-colors h-[64px] ${darkMode ? "hover:bg-[#202c33]" : "hover:bg-slate-50/80"}`}
                 >
-                  {/* Name */}
-                  <td
-                    className={`px-6 py-3.5 text-sm font-medium ${
-                      darkMode ? "text-white" : "text-slate-800"
-                    }`}
-                  >
+                  {/* Name column */}
+                  <td className={`px-6 align-middle text-sm font-medium ${darkMode ? "text-white" : "text-slate-800"}`}>
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold shrink-0 ${
                           darkMode ? "bg-[#202c33] text-emerald-400" : "bg-emerald-50 text-[#008069]"
                         }`}
                       >
                         <User size={15} />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span>{c.name}</span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="truncate">{c.name}</span>
                         {c.aiContext?.trim() && (
-                          <span className="px-2 py-0.5 text-[10px] rounded-full bg-violet-500/15 text-violet-400">
+                          <span className="px-2 py-0.5 text-[10px] rounded-full bg-violet-500/15 text-violet-400 shrink-0">
                             Context Provided
                           </span>
                         )}
@@ -433,28 +432,24 @@ export default function Contacts({ contacts, setContacts, rules, setRules, showT
                     </div>
                   </td>
 
-                  {/* Phone */}
-                  <td
-                    className={`px-6 py-3.5 text-sm font-mono ${
-                      darkMode ? "text-slate-300" : "text-slate-600"
-                    }`}
-                  >
+                  {/* Phone column */}
+                  <td className={`px-6 align-middle text-sm font-mono ${darkMode ? "text-slate-300" : "text-slate-600"}`}>
                     {c.phoneNumber || "-"}
                   </td>
 
-                  {/* Relationship */}
-                  <td className="px-6 py-3.5">
+                  {/* Relationship column */}
+                  <td className="px-6 align-middle">
                     <RelationshipSelect
                       value={c.relationship || "Unknown"}
                       onChange={(e) => updateRelationship(c.phoneNumber, e.target.value)}
-                      className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${getRelationshipColor(c.relationship)} ${
+                      className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all outline-none cursor-pointer ${getRelationshipColor(c.relationship)} ${
                         darkMode ? "bg-[#202c33]" : "bg-white"
                       }`}
                     />
                   </td>
 
-                  {/* Bot toggle */}
-                  <td className="px-6 py-3.5">
+                  {/* Bot column */}
+                  <td className="px-6 align-middle">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -462,32 +457,26 @@ export default function Contacts({ contacts, setContacts, rules, setRules, showT
                         e.stopPropagation();
                         toggleBot(c.phoneNumber);
                       }}
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
                         c.botEnabled
-                          ? darkMode
-                            ? "bg-green-900/20 text-green-300"
-                            : "bg-green-100 text-green-700"
-                          : darkMode
-                          ? "bg-slate-800 text-slate-300"
-                          : "bg-slate-100 text-slate-500"
+                          ? darkMode ? "bg-green-900/20 text-green-400 border border-green-500/30" : "bg-green-100 text-green-700"
+                          : darkMode ? "bg-[#202c33] text-slate-400 border border-[#2a3942]" : "bg-slate-100 text-slate-500"
                       }`}
                     >
                       {c.botEnabled ? "ON" : "OFF"}
                     </button>
                   </td>
 
-                  {/* Actions */}
-                  <td className="px-6 py-3.5 text-right">
-                    <div className="flex justify-end gap-2">
+                  {/* Actions column */}
+                  <td className="px-6 align-middle text-right pr-6">
+                    <div className="flex justify-end items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => setInsightContact(c)}
                         aria-label={`Open intelligence for ${c.name || c.phoneNumber}`}
                         title="Contact intelligence"
                         className={`p-2 rounded-xl text-emerald-500 transition-all ${
-                          darkMode
-                            ? "hover:bg-[#202c33] hover:text-emerald-400"
-                            : "hover:bg-emerald-50 hover:text-emerald-700"
+                          darkMode ? "hover:bg-[#2a3942] hover:text-emerald-400" : "hover:bg-emerald-50 hover:text-emerald-700"
                         }`}
                       >
                         <BarChart3 size={16} />
@@ -495,13 +484,9 @@ export default function Contacts({ contacts, setContacts, rules, setRules, showT
 
                       <button
                         type="button"
-                        onClick={() =>
-                          setEditingContact({ ...c, originalPhoneNumber: c.phoneNumber })
-                        }
+                        onClick={() => setEditingContact({ ...c, originalPhoneNumber: c.phoneNumber })}
                         className={`p-2 rounded-xl text-blue-500 transition-all ${
-                          darkMode
-                            ? "hover:bg-[#202c33] hover:text-blue-400"
-                            : "hover:bg-blue-50 hover:text-blue-700"
+                          darkMode ? "hover:bg-[#2a3942] hover:text-blue-400" : "hover:bg-blue-50 hover:text-blue-700"
                         }`}
                       >
                         <Edit3 size={16} />
@@ -511,9 +496,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules, showT
                         type="button"
                         onClick={() => handleDelete(c.phoneNumber)}
                         className={`p-2 rounded-xl text-rose-500 transition-all ${
-                          darkMode
-                            ? "hover:bg-[#202c33] hover:text-rose-400"
-                            : "hover:bg-rose-50 hover:text-rose-700"
+                          darkMode ? "hover:bg-[#2a3942] hover:text-rose-400" : "hover:bg-rose-50 hover:text-rose-700"
                         }`}
                       >
                         <Trash2 size={16} />
@@ -527,7 +510,7 @@ export default function Contacts({ contacts, setContacts, rules, setRules, showT
         </table>
       </div>
 
-      {/* ── Edit modal ───────────────────────────────────────────────────────── */}
+      {/* ── Modals ──────────────────────────────────────────────────────────── */}
       {editingContact && (
         <EditModal
           contact={editingContact}

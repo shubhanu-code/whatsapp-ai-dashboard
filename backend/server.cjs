@@ -1,11 +1,13 @@
 require("dotenv").config();
 
-const fs      = require("fs");
+const fs = require("fs");
 const express = require("express");
-const http    = require("http");
-const cors    = require("cors");
+const http = require("http");
+const cors = require("cors");
 const { Server } = require("socket.io");
 const { startBaileys } = require("./services/baileysService");
+
+// Routes
 const chatRoutes = require("./routes/chatRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 const ruleRoutes = require("./routes/ruleRoutes");
@@ -14,16 +16,18 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const allowedContactsRoutes = require("./routes/allowedContactsRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 
-// ── Constants ────────────────────────────────────────────────────────────────
-const AUTH_DIR   = process.env.AUTH_DIR   || "./wa-auth";
+// ── Constants & Configuration ────────────────────────────────────────────────
+const PORT = process.env.PORT || 5000;
+const AUTH_DIR = process.env.AUTH_DIR || "./wa-auth";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
-// ── State (Wrapped in an object to pass by reference or export) ────────────────
+// ── State ────────────────────────────────────────────────────────────────────
 const whatsappState = {
   status: "starting",
   latestQR: null
 };
 
-// ── Process-level error guards ───────────────────────────────────────────────
+// ── Process-Level Error Guards ───────────────────────────────────────────────
 process.on("unhandledRejection", (err) => {
   if (err && /detached Frame/i.test(err.message || "")) {
     console.warn("IGNORED (benign detached-frame race during teardown):", err.message);
@@ -36,23 +40,27 @@ process.on("uncaughtException", (err) => {
   console.error("UNCAUGHT EXCEPTION:", err);
 });
 
-// ── Auth directory ───────────────────────────────────────────────────────────
+// ── Ensure Auth Directory Exists ─────────────────────────────────────────────
 if (!fs.existsSync(AUTH_DIR)) {
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 }
 
-// ── Express app ──────────────────────────────────────────────────────────────
-const app    = express();
+// ── Express & HTTP Server Setup ──────────────────────────────────────────────
+const app = express();
 const server = http.createServer(app);
-const io     = new Server(server, {
-  cors: { origin: "http://localhost:5173", methods: ["GET", "POST"] },
+const io = new Server(server, {
+  cors: { origin: FRONTEND_URL, methods: ["GET", "POST"] },
 });
 
+// Expose socket server globally for routes/services to access safely
 global.io = io;
 
-app.use(cors({ origin: "http://localhost:5173" }));
+// Middleware
+app.use(cors({ origin: FRONTEND_URL }));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// Core API Routes
 app.use("/analytics", analyticsRoutes);
 app.use("/contacts", contactRoutes);
 app.use("/rules", ruleRoutes);
@@ -61,27 +69,35 @@ app.use("/allowed-contacts", allowedContactsRoutes);
 app.use("/chats", chatRoutes);
 app.use("/ai", aiRoutes);
 
-// ── Status route ──────────────────────────────────────────────────────────────
+// ── Real-Time Status Endpoint ────────────────────────────────────────────────
 app.get("/status", (_req, res) => {
   res.json({ 
     whatsappStatus: whatsappState.status, 
     hasQR: !!whatsappState.latestQR,
-    qr: whatsappState.latestQR // Useful if your frontend needs to draw the QR
+    qr: whatsappState.latestQR 
   });
 });
 
-// ── Bootstrap ─────────────────────────────────────────────────────────────────
+// ── Bootstrap Execution ──────────────────────────────────────────────────────
 (async () => {
-  await startBaileys();
+  try {
+    // Injecting state management callbacks directly into Baileys to avoid circular dependencies
+    await startBaileys({
+      onStatusUpdate: (status) => { 
+        whatsappState.status = status;
+        io.emit("whatsapp_status", status); // Automatically broadcast state updates to frontend clients
+      },
+      onQRUpdate: (qr) => { 
+        whatsappState.latestQR = qr; 
+        io.emit("whatsapp_qr", qr); // Automatically broadcast new QR codes to frontend clients
+      }
+    });
+
+    server.listen(PORT, () => {
+      console.log(`Server running smoothly on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Critical error during system bootstrapping:", error);
+    process.exit(1);
+  }
 })();
-
-server.listen(5000, () => {
-  console.log("Server running on port 5000");
-});
-
-// ── Architecture Exports ──────────────────────────────────────────────────────
-// This lets baileysService update the server state without global variable pollution
-module.exports = {
-  updateWhatsappStatus: (status) => { whatsappState.status = status; },
-  updateLatestQR: (qr) => { whatsappState.latestQR = qr; }
-};
